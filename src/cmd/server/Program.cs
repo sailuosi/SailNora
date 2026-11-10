@@ -24,6 +24,10 @@ using SailNora.Product;
 using SailNora.Product.Ai;
 using SailNora.Product.Ai.Controller;
 using SailNora.Product.Ai.Service;
+using SailNora.Product.Agent;
+using SailNora.Product.Agent.Bootstrap;
+using SailNora.Product.Agent.Service;
+using SailNora.Product.Agent.Tools;
 using SailNora.Product.Chat;
 using SailNora.Product.Chat.Bootstrap;
 using SailNora.Product.Chat.Service;
@@ -41,6 +45,7 @@ builder.Services.AddSailNoraPlatform();
 builder.Services.AddSailNoraAi(builder.Configuration);
 builder.Services.AddSailNoraKnowledge(builder.Configuration);
 builder.Services.AddSailNoraChat();
+builder.Services.AddSailNoraAgent();
 builder.Services.AddSailNoraHangfire(builder.Configuration);
 
 builder.Services.AddSailNoraServiceDiscovery(
@@ -59,6 +64,10 @@ builder.Services.AddSailNoraServiceDiscovery(
     typeof(ChunkRetrievalService),
     typeof(KnowledgeChatService),
     typeof(ChatSchemaInitializer),
+    typeof(AgentService),
+    typeof(AgentChatService),
+    typeof(KnowledgeAgentTools),
+    typeof(AgentSchemaInitializer),
     typeof(ProductAssemblyMarker));
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -154,6 +163,7 @@ using (var scope = app.Services.CreateScope())
     await initializer.InitializeAsync();
     await scope.ServiceProvider.GetRequiredService<KnowledgeSchemaInitializer>().InitializeAsync();
     await scope.ServiceProvider.GetRequiredService<ChatSchemaInitializer>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<AgentSchemaInitializer>().InitializeAsync();
 }
 
 app.UseSwagger();

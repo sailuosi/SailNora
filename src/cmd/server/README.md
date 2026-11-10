@@ -16,6 +16,7 @@ dotnet run -f net10.0 --urls http://127.0.0.1:5080
 - AI 流式: `POST /api/ai/chat` body `{"prompt":"..."}`（需 Bearer；默认 Placeholder SSE）
 - 知识库: `POST /api/v1/knowledge-bases`；上传 `POST /api/v1/knowledge-bases/{id}/knowledge/file`；分块 `GET /api/v1/chunks/{knowledgeId}`
 - 会话/RAG: `POST /api/v1/sessions`；`GET /api/v1/sessions/{id}/messages`；`POST /api/v1/knowledge-chat/{sessionId}`（SSE：load_history/references/answer/complete）
+- Agent: `POST/GET /api/v1/agents`；`POST /api/v1/agent-chat/{sessionId}`（SSE：tool_call/tool_result/answer）
 - 检索: `POST /api/v1/knowledge-search`（关键词 + embedding 混合分 + lexical rerank）
 - Embedding: `Ai:EmbeddingProvider=hashing|openai`（openai 需 ApiKey / EmbeddingModel）
 - DocReader: gRPC 客户端已接 proto；`GET /api/v1/system/docreader/info`（默认 Enabled=false，解析回退本地文本）
