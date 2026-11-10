@@ -39,6 +39,9 @@ using SailNora.Product.Datasource;
 using SailNora.Product.Datasource.Bootstrap;
 using SailNora.Product.Datasource.Jobs;
 using SailNora.Product.Datasource.Service;
+using SailNora.Product.Embed;
+using SailNora.Product.Embed.Bootstrap;
+using SailNora.Product.Embed.Service;
 using SailNora.Product.Mcp;
 using SailNora.Product.Mcp.Bootstrap;
 using SailNora.Product.Mcp.Service;
@@ -60,6 +63,7 @@ builder.Services.AddSailNoraAgent();
 builder.Services.AddSailNoraWiki();
 builder.Services.AddSailNoraMcp();
 builder.Services.AddSailNoraDatasource();
+builder.Services.AddSailNoraEmbed();
 builder.Services.AddSailNoraHangfire(builder.Configuration);
 
 builder.Services.AddSailNoraServiceDiscovery(
@@ -94,6 +98,8 @@ builder.Services.AddSailNoraServiceDiscovery(
     typeof(DatasourceService),
     typeof(DatasourceSyncJob),
     typeof(DatasourceSchemaInitializer),
+    typeof(EmbedChannelService),
+    typeof(EmbedSchemaInitializer),
     typeof(ProductAssemblyMarker));
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -193,6 +199,7 @@ using (var scope = app.Services.CreateScope())
     await scope.ServiceProvider.GetRequiredService<WikiSchemaInitializer>().InitializeAsync();
     await scope.ServiceProvider.GetRequiredService<McpSchemaInitializer>().InitializeAsync();
     await scope.ServiceProvider.GetRequiredService<DatasourceSchemaInitializer>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<EmbedSchemaInitializer>().InitializeAsync();
 }
 
 app.UseSwagger();

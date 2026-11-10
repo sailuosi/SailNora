@@ -28,6 +28,7 @@ public sealed class CapabilitiesController : ControllerBase
         Sandbox = false,
         McpServer = true,
         Datasource = true,
+        Embed = true,
         AuthModes = ["jwt", "api_key"]
     };
 }

@@ -37,5 +37,6 @@ public sealed class CapabilitiesDto
     public bool Sandbox { get; set; }
     public bool McpServer { get; set; }
     public bool Datasource { get; set; }
+    public bool Embed { get; set; }
     public string[] AuthModes { get; set; } = ["jwt", "api_key"];
 }
