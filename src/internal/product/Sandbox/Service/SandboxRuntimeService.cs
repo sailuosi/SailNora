@@ -5,7 +5,8 @@ using SailNora.Product.Sandbox.Dtos;
 
 namespace SailNora.Product.Sandbox.Service;
 
-public sealed class SandboxRuntimeService : IScoped
+[Scoped]
+public sealed class SandboxRuntimeService
 {
     private readonly MooRepository<KnSandboxConfig> _configs;
     private readonly HostSandboxRunner _host;

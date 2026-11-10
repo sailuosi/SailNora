@@ -8,7 +8,8 @@ using SailNora.Foundation.Data;
 namespace SailNora.Product.Agent.Tools;
 
 /// <summary>对齐上游 Agent 核心工具名：search_knowledge / list_documents / read_document。</summary>
-public sealed class KnowledgeAgentTools : IScoped
+[Scoped]
+public sealed class KnowledgeAgentTools
 {
     private readonly ChunkRetrievalService _retrieval;
     private readonly KnowledgeService _knowledge;

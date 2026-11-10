@@ -6,7 +6,8 @@ using SailNora.Product.Mcp.DBLayer;
 
 namespace SailNora.Product.Mcp.Bootstrap;
 
-public sealed class McpSchemaInitializer : IScoped
+[Scoped]
+public sealed class McpSchemaInitializer
 {
     private static readonly Type[] EntityTypes =
     [

@@ -8,7 +8,8 @@ using SailNora.Product.Embed.Dtos;
 
 namespace SailNora.Product.Embed.Service;
 
-public sealed class EmbedChannelService : IScoped
+[Scoped]
+public sealed class EmbedChannelService
 {
     private readonly MooRepository<KnEmbedChannel> _channels;
 

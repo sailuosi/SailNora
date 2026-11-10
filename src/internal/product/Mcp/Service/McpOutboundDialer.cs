@@ -7,7 +7,8 @@ using SailNora.Product.Mcp.Dtos;
 namespace SailNora.Product.Mcp.Service;
 
 /// <summary>F5f：出站 MCP JSON-RPC dial（http/sse/streamable → POST；stdio stub）。</summary>
-public sealed class McpOutboundDialer : IScoped
+[Scoped]
+public sealed class McpOutboundDialer
 {
     private static readonly HashSet<string> HttpTransports = new(StringComparer.OrdinalIgnoreCase)
     {

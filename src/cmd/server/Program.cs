@@ -4,67 +4,51 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
+using SailNora.App;
 using SailNora.App.Auth;
 using SailNora.App.Scheduling;
+using SailNora.Foundation;
 using SailNora.Foundation.AspNet;
 using SailNora.Foundation.Auth;
 using SailNora.Foundation.Bootstrap;
 using SailNora.Foundation.Configuration;
 using SailNora.Foundation.Data;
-using SailNora.Foundation.DI;
 using SailNora.Foundation.Models;
 using SailNora.Foundation.Options;
 using SailNora.Platform;
 using SailNora.Platform.Auth.Controller;
-using SailNora.Platform.Auth.Service;
 using SailNora.Platform.Bootstrap;
 using SailNora.Platform.Probe.Controller;
-using SailNora.Foundation.Storage;
 using SailNora.Product;
 using SailNora.Product.Ai;
 using SailNora.Product.Ai.Controller;
-using SailNora.Product.Ai.Service;
 using SailNora.Product.Agent;
 using SailNora.Product.Agent.Bootstrap;
-using SailNora.Product.Agent.Service;
-using SailNora.Product.Agent.Tools;
 using SailNora.Product.Chat;
 using SailNora.Product.Chat.Bootstrap;
-using SailNora.Product.Chat.Service;
 using SailNora.Product.Knowledge;
 using SailNora.Product.Knowledge.Bootstrap;
-using SailNora.Product.Knowledge.Jobs;
-using SailNora.Product.Knowledge.Service;
 using SailNora.Product.Datasource;
 using SailNora.Product.Datasource.Bootstrap;
-using SailNora.Product.Datasource.Jobs;
-using SailNora.Product.Datasource.Service;
 using SailNora.Product.Embed;
 using SailNora.Product.Embed.Bootstrap;
-using SailNora.Product.Embed.Service;
 using SailNora.Product.Im;
 using SailNora.Product.Im.Bootstrap;
-using SailNora.Product.Im.Service;
 using SailNora.Product.Sandbox;
 using SailNora.Product.Sandbox.Bootstrap;
-using SailNora.Product.Sandbox.Service;
 using SailNora.Product.Memory;
 using SailNora.Product.Memory.Bootstrap;
-using SailNora.Product.Memory.Jobs;
-using SailNora.Product.Memory.Service;
 using SailNora.Product.Mcp;
 using SailNora.Product.Mcp.Bootstrap;
-using SailNora.Product.Mcp.Service;
 using SailNora.Product.Wiki;
 using SailNora.Product.Wiki.Bootstrap;
-using SailNora.Product.Wiki.Jobs;
-using SailNora.Product.Wiki.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Configuration.AddMooJsonShards(builder.Environment);
 builder.Services.AddSailNoraProjectOptions(builder.Configuration);
 builder.Services.AddMooSql(builder.Configuration);
+builder.Services.AddSailNoraFoundationServices();
 builder.Services.AddSailNoraPlatform();
 builder.Services.AddSailNoraAi(builder.Configuration);
 builder.Services.AddSailNoraKnowledge(builder.Configuration);
@@ -78,62 +62,14 @@ builder.Services.AddSailNoraMemory();
 builder.Services.AddSailNoraIm();
 builder.Services.AddSailNoraSandbox();
 builder.Services.AddSailNoraHangfire(builder.Configuration);
-
-builder.Services.AddSailNoraServiceDiscovery(
-    typeof(AuthService),
-    typeof(DbInitializer),
-    typeof(GlobalExceptionFilter),
-    typeof(LocalFileStorage),
-    typeof(PermissionAuthorizationHandler),
-    typeof(RefreshTokenCleanupJob),
-    typeof(AiChatService),
-    typeof(PlaceholderChatClient),
-    typeof(KnowledgeService),
-    typeof(DocumentProcessJob),
-    typeof(KnowledgeSchemaInitializer),
-    typeof(SessionService),
-    typeof(ChunkRetrievalService),
-    typeof(KnowledgeChatService),
-    typeof(ChatSchemaInitializer),
-    typeof(AgentService),
-    typeof(AgentChatService),
-    typeof(KnowledgeAgentTools),
-    typeof(AgentNativeToolFactory),
-    typeof(AgentSchemaInitializer),
-    typeof(TagService),
-    typeof(FaqService),
-    typeof(WikiService),
-    typeof(WikiGraphService),
-    typeof(WikiIngestJob),
-    typeof(WikiFinalizeJob),
-    typeof(WikiSchemaInitializer),
-    typeof(McpServiceRegistry),
-    typeof(McpOutboundDialer),
-    typeof(McpToolsCache),
-    typeof(HitlService),
-    typeof(McpSchemaInitializer),
-    typeof(DatasourceService),
-    typeof(DatasourceSyncJob),
-    typeof(DatasourceSchemaInitializer),
-    typeof(EmbedChannelService),
-    typeof(EmbedSchemaInitializer),
-    typeof(MemoryService),
-    typeof(MemoryExtractJob),
-    typeof(MemorySchemaInitializer),
-    typeof(ImChannelService),
-    typeof(ImSchemaInitializer),
-    typeof(SandboxConfigService),
-    typeof(SandboxRuntimeService),
-    typeof(HostSandboxRunner),
-    typeof(DockerSandboxRunner),
-    typeof(DockerSandboxSessionService),
-    typeof(SandboxSchemaInitializer),
-    typeof(ProductAssemblyMarker));
+builder.Services.AddSailNoraProductServices();
+builder.Services.AddSailNoraAppServices();
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
           ?? throw new InvalidOperationException("Jwt configuration is required.");
 
 builder.Services.AddSingleton<IAuthorizationPolicyProvider, PermissionPolicyProvider>();
+// 显式注册 IAuthorizationHandler（与源生成 AsSelf 并存，确保策略能解析到 Handler）
 builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHandler>();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)

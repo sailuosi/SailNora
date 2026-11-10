@@ -5,7 +5,8 @@ using SailNora.Product.Sandbox.Dtos;
 
 namespace SailNora.Product.Sandbox.Service;
 
-public sealed class SandboxConfigService : IScoped
+[Scoped]
+public sealed class SandboxConfigService
 {
     private static readonly HashSet<string> AllowedBackends = new(StringComparer.OrdinalIgnoreCase)
     {

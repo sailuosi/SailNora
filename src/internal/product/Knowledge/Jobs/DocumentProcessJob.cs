@@ -12,7 +12,8 @@ using Microsoft.Extensions.Options;
 namespace SailNora.Product.Knowledge.Jobs;
 
 /// <summary>对齐上游 asynq <c>document:process</c>。</summary>
-public sealed class DocumentProcessJob : IScoped
+[Scoped]
+public sealed class DocumentProcessJob
 {
     private readonly MooRepository<KnKnowledge> _knowledges;
     private readonly MooRepository<KnChunk> _chunks;
@@ -176,7 +177,8 @@ public interface IDocumentProcessEnqueue
 }
 
 /// <summary>Hangfire 关闭时同步执行，保证 F2 冒烟可完成。</summary>
-public sealed class InlineDocumentProcessEnqueue : IDocumentProcessEnqueue, IScoped
+[Scoped]
+public sealed class InlineDocumentProcessEnqueue : IDocumentProcessEnqueue
 {
     private readonly DocumentProcessJob _job;
 

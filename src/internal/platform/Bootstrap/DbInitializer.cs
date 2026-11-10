@@ -10,7 +10,8 @@ using SailNora.Platform.User.DBLayer;
 
 namespace SailNora.Platform.Bootstrap;
 
-public sealed class DbInitializer : IDbInitializer, IScoped
+[Scoped]
+public sealed class DbInitializer : IDbInitializer
 {
     private static readonly Type[] EntityTypes =
     [

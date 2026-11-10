@@ -5,7 +5,8 @@ using SailNora.Product.Knowledge.Dtos;
 
 namespace SailNora.Product.Knowledge.Service;
 
-public sealed class FaqService : IScoped
+[Scoped]
+public sealed class FaqService
 {
     private readonly MooRepository<KnKnowledgeBase> _bases;
     private readonly MooRepository<KnFaqEntry> _entries;

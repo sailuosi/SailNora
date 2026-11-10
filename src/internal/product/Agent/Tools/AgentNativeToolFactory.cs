@@ -6,7 +6,8 @@ using SailNora.Product.Sandbox.Tools;
 namespace SailNora.Product.Agent.Tools;
 
 /// <summary>为单次 Agent 请求构造带闭包上下文的 MAF/MEAI 工具。</summary>
-public sealed class AgentNativeToolFactory : IScoped
+[Scoped]
+public sealed class AgentNativeToolFactory
 {
     private readonly KnowledgeAgentTools _tools;
     private readonly SandboxAgentTools _sandboxTools;

@@ -16,7 +16,8 @@ using SailNora.Platform.User.DBLayer;
 
 namespace SailNora.Platform.Auth.Service;
 
-public sealed class AuthService : IScoped
+[Scoped]
+public sealed class AuthService
 {
     private readonly MooRepository<SysUser> _users;
     private readonly MooRepository<SysRefreshToken> _refreshTokens;

@@ -10,7 +10,8 @@ using SailNora.Product.Chat.DBLayer;
 namespace SailNora.Product.Memory.Service;
 
 /// <summary>F6：将会话消息蒸馏为简短记忆条目。</summary>
-public sealed partial class MemoryDistiller : IScoped
+[Scoped]
+public sealed partial class MemoryDistiller
 {
     private readonly AiOptions _options;
     private readonly ILogger<MemoryDistiller> _logger;

@@ -11,7 +11,8 @@ using SailNora.Product.Memory.Service;
 namespace SailNora.Product.Memory.Jobs;
 
 /// <summary>对齐上游 asynq <c>memory:extract</c>（heuristic 或 llm 蒸馏）。</summary>
-public sealed class MemoryExtractJob : IScoped
+[Scoped]
+public sealed class MemoryExtractJob
 {
     private readonly SessionService _sessions;
     private readonly MooRepository<KnMemory> _memories;
@@ -102,7 +103,8 @@ public interface IMemoryExtractEnqueue
     void Enqueue(MemoryExtractPayload payload);
 }
 
-public sealed class InlineMemoryExtractEnqueue : IMemoryExtractEnqueue, IScoped
+[Scoped]
+public sealed class InlineMemoryExtractEnqueue : IMemoryExtractEnqueue
 {
     private readonly MemoryExtractJob _job;
 

@@ -13,7 +13,8 @@ public interface ILocalFileStorage
     string ResolvePhysicalPath(string relativePath);
 }
 
-public sealed class LocalFileStorage : ILocalFileStorage, ISingleton
+[Singleton]
+public sealed class LocalFileStorage : ILocalFileStorage
 {
     private readonly string _root;
 

@@ -4,7 +4,8 @@ using SailNora.Platform.Auth.DBLayer;
 
 namespace SailNora.App.Scheduling;
 
-public sealed class RefreshTokenCleanupJob : IScoped
+[Scoped]
+public sealed class RefreshTokenCleanupJob
 {
     private readonly MooRepository<SysRefreshToken> _tokens;
 

@@ -6,7 +6,8 @@ using SailNora.Product.Chat.DBLayer;
 
 namespace SailNora.Product.Chat.Bootstrap;
 
-public sealed class ChatSchemaInitializer : IScoped
+[Scoped]
+public sealed class ChatSchemaInitializer
 {
     private static readonly Type[] EntityTypes =
     [

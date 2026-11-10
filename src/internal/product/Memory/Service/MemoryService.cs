@@ -6,7 +6,8 @@ using SailNora.Product.Memory.Jobs;
 
 namespace SailNora.Product.Memory.Service;
 
-public sealed class MemoryService : IScoped
+[Scoped]
+public sealed class MemoryService
 {
     private readonly MooRepository<KnMemory> _memories;
     private readonly MemoryExtractJob _job;

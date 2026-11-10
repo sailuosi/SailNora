@@ -5,7 +5,8 @@ using SailNora.Product.Mcp.Dtos;
 namespace SailNora.Product.Mcp.Service;
 
 /// <summary>F5n：出站 MCP <c>tools/list</c> 进程内 TTL 缓存。</summary>
-public sealed class McpToolsCache : ISingleton
+[Singleton]
+public sealed class McpToolsCache
 {
     public static readonly TimeSpan DefaultTtl = TimeSpan.FromMinutes(5);
 

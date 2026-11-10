@@ -1,5 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
+  <Import Project="..\..\generators\EmitGeneratedSources.props" />
+
   <PropertyGroup>
     <RootNamespace>SailNora.App</RootNamespace>
     <AssemblyName>SailNora.App</AssemblyName>
@@ -15,6 +17,9 @@
     <ProjectReference Include="..\..\internal\platform\SailNora.Platform.csproj" />
     <ProjectReference Include="..\..\internal\product\SailNora.Product.csproj" />
     <ProjectReference Include="..\..\..\..\hangfire.moo-sql\src\Hangfire.MooSql\Hangfire.MooSql.csproj" />
+    <ProjectReference Include="..\..\generators\SailNora.Generators\SailNora.Generators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>

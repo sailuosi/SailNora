@@ -9,7 +9,8 @@ using SailNora.Product.Sandbox.Dtos;
 namespace SailNora.Product.Sandbox.Service;
 
 /// <summary>F5m：Docker 长生命周期会话（docker run -d / exec / rm）。</summary>
-public sealed class DockerSandboxSessionService : ISingleton
+[Singleton]
+public sealed class DockerSandboxSessionService
 {
     private readonly ConcurrentDictionary<string, DockerSandboxSession> _sessions = new(StringComparer.Ordinal);
 

@@ -5,7 +5,8 @@ using SailNora.Foundation.DI;
 namespace SailNora.Product.Sandbox.Service;
 
 /// <summary>F5h：通过 docker CLI 一次性 <c>docker run --rm</c>（无长生命周期会话）。</summary>
-public sealed class DockerSandboxRunner : IScoped
+[Scoped]
+public sealed class DockerSandboxRunner
 {
     public bool IsDockerAvailable()
     {

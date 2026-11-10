@@ -6,7 +6,8 @@ using SailNora.Foundation.Models;
 
 namespace SailNora.Foundation.AspNet;
 
-public sealed class GlobalExceptionFilter : IExceptionFilter, IScoped
+[Scoped]
+public sealed class GlobalExceptionFilter : IExceptionFilter
 {
     private readonly ILogger<GlobalExceptionFilter> _logger;
 

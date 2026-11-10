@@ -6,7 +6,8 @@ using SailNora.Product.Wiki.Dtos;
 
 namespace SailNora.Product.Wiki.Service;
 
-public sealed class WikiService : IScoped
+[Scoped]
+public sealed class WikiService
 {
     private readonly MooRepository<KnWikiPage> _pages;
 

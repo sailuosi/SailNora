@@ -6,7 +6,8 @@ using SailNora.Product.Memory.DBLayer;
 
 namespace SailNora.Product.Memory.Bootstrap;
 
-public sealed class MemorySchemaInitializer : IScoped
+[Scoped]
+public sealed class MemorySchemaInitializer
 {
     private static readonly Type[] EntityTypes = [typeof(KnMemory)];
 

@@ -7,7 +7,8 @@ using SailNora.Product.Mcp.Dtos;
 
 namespace SailNora.Product.Mcp.Service;
 
-public sealed class McpServiceRegistry : IScoped
+[Scoped]
+public sealed class McpServiceRegistry
 {
     private readonly MooRepository<KnMcpService> _services;
     private readonly MooRepository<KnMcpEndpoint> _endpoints;

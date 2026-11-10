@@ -6,7 +6,8 @@ using SailNora.Product.Sandbox.DBLayer;
 
 namespace SailNora.Product.Sandbox.Bootstrap;
 
-public sealed class SandboxSchemaInitializer : IScoped
+[Scoped]
+public sealed class SandboxSchemaInitializer
 {
     private static readonly Type[] EntityTypes = [typeof(KnSandboxConfig)];
 

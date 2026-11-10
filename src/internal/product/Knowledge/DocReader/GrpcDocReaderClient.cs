@@ -8,7 +8,8 @@ using DocReaderSvc = Docreader.DocReader;
 
 namespace SailNora.Product.Knowledge.DocReader;
 
-public sealed class GrpcDocReaderClient : IDocReaderClient, ISingleton, IAsyncDisposable
+[Singleton]
+public sealed class GrpcDocReaderClient : IDocReaderClient, IAsyncDisposable
 {
     private readonly DocReaderOptions _options;
     private readonly ILogger<GrpcDocReaderClient> _logger;

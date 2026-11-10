@@ -9,7 +9,8 @@ using SailNora.Product.Im.Dtos;
 
 namespace SailNora.Product.Im.Service;
 
-public sealed class ImChannelService : IScoped
+[Scoped]
+public sealed class ImChannelService
 {
     private readonly MooRepository<KnImChannel> _channels;
     private readonly MooRepository<KnImInboundEvent> _events;

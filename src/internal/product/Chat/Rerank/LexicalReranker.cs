@@ -6,7 +6,8 @@ namespace SailNora.Product.Chat.Rerank;
 /// <summary>
 /// 轻量词项重排：在混合分基础上按查询词覆盖率微调，无需外部 Rerank 模型。
 /// </summary>
-public sealed class LexicalReranker : IReranker, ISingleton
+[Singleton]
+public sealed class LexicalReranker : IReranker
 {
     public string Name => "lexical";
 

@@ -6,7 +6,8 @@ using SailNora.Product.Im.DBLayer;
 
 namespace SailNora.Product.Im.Bootstrap;
 
-public sealed class ImSchemaInitializer : IScoped
+[Scoped]
+public sealed class ImSchemaInitializer
 {
     private static readonly Type[] EntityTypes =
     [

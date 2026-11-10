@@ -7,7 +7,8 @@ using SailNora.Product.Knowledge.DBLayer;
 
 namespace SailNora.Product.Datasource.Service;
 
-public sealed class DatasourceService : IScoped
+[Scoped]
+public sealed class DatasourceService
 {
     private readonly MooRepository<KnDatasource> _sources;
     private readonly MooRepository<KnKnowledgeBase> _bases;

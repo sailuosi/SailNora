@@ -6,7 +6,8 @@ namespace SailNora.Product.Ai;
 /// <summary>
 /// 无真实模型时的占位 ChatClient；若带 Tools，则模拟一次 function-call 以便冒烟原生 FC 路径。
 /// </summary>
-public sealed class PlaceholderChatClient : IChatClient, ISingleton
+[Singleton]
+public sealed class PlaceholderChatClient : IChatClient
 {
     public ChatClientMetadata Metadata { get; } = new("placeholder");
 

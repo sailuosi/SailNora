@@ -6,7 +6,8 @@ using SailNora.Product.Agent.DBLayer;
 
 namespace SailNora.Product.Agent.Bootstrap;
 
-public sealed class AgentSchemaInitializer : IScoped
+[Scoped]
+public sealed class AgentSchemaInitializer
 {
     private static readonly Type[] EntityTypes = [typeof(KnAgent)];
 

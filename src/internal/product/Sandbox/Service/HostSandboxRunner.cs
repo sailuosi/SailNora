@@ -5,7 +5,8 @@ using SailNora.Foundation.DI;
 namespace SailNora.Product.Sandbox.Service;
 
 /// <summary>F5e host backend：受控进程执行（对齐上游 shell -c，无 docker）。</summary>
-public sealed class HostSandboxRunner : IScoped
+[Scoped]
+public sealed class HostSandboxRunner
 {
     public const int DefaultTimeoutSec = 120;
     public const int MaxTimeoutSec = 600;

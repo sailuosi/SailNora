@@ -5,7 +5,8 @@ using SailNora.Product.Knowledge.Dtos;
 
 namespace SailNora.Product.Knowledge.Service;
 
-public sealed class TagService : IScoped
+[Scoped]
+public sealed class TagService
 {
     private readonly MooRepository<KnKnowledgeBase> _bases;
     private readonly MooRepository<KnKnowledgeTag> _tags;

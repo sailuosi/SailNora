@@ -6,7 +6,8 @@ using SailNora.Product.Chat.Dtos;
 
 namespace SailNora.Product.Chat.Service;
 
-public sealed class KnowledgeChatService : IScoped
+[Scoped]
+public sealed class KnowledgeChatService
 {
     private readonly SessionService _sessions;
     private readonly ChunkRetrievalService _retrieval;

@@ -7,7 +7,8 @@ using SailNora.Product.Knowledge.DBLayer;
 namespace SailNora.Product.Knowledge.Bootstrap;
 
 /// <summary>产品知识表 DDL（与平台 DbInitializer 分离，遵守依赖方向）。</summary>
-public sealed class KnowledgeSchemaInitializer : IScoped
+[Scoped]
+public sealed class KnowledgeSchemaInitializer
 {
     private static readonly Type[] EntityTypes =
     [

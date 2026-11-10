@@ -14,7 +14,8 @@ using SailNora.Product.Knowledge.Jobs;
 namespace SailNora.Product.Datasource.Jobs;
 
 /// <summary>对齐上游 asynq <c>datasource:sync</c>（F6：rss + gitlab + confluence + feishu）。</summary>
-public sealed class DatasourceSyncJob : IScoped
+[Scoped]
+public sealed class DatasourceSyncJob
 {
     private readonly MooRepository<KnDatasource> _sources;
     private readonly MooRepository<KnKnowledgeBase> _bases;
@@ -262,7 +263,8 @@ public interface IDatasourceSyncEnqueue
     void Enqueue(DatasourceSyncPayload payload);
 }
 
-public sealed class InlineDatasourceSyncEnqueue : IDatasourceSyncEnqueue, IScoped
+[Scoped]
+public sealed class InlineDatasourceSyncEnqueue : IDatasourceSyncEnqueue
 {
     private readonly DatasourceSyncJob _job;
 

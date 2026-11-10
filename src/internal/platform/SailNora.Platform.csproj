@@ -1,5 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
+  <Import Project="..\..\generators\EmitGeneratedSources.props" />
+
   <PropertyGroup>
     <RootNamespace>SailNora.Platform</RootNamespace>
     <AssemblyName>SailNora.Platform</AssemblyName>
@@ -12,6 +14,9 @@
   <ItemGroup>
     <ProjectReference Include="..\foundation\SailNora.Foundation.csproj" />
     <ProjectReference Include="..\..\..\..\moo-sqlm\mooSQL2024\ext\mooSQL.Ext.csproj" />
+    <ProjectReference Include="..\..\generators\SailNora.Generators\SailNora.Generators.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="false" />
   </ItemGroup>
 
   <ItemGroup>
@@ -19,4 +24,3 @@
   </ItemGroup>
 
 </Project>
-

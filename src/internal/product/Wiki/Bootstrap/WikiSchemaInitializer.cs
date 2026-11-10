@@ -6,7 +6,8 @@ using SailNora.Product.Wiki.DBLayer;
 
 namespace SailNora.Product.Wiki.Bootstrap;
 
-public sealed class WikiSchemaInitializer : IScoped
+[Scoped]
+public sealed class WikiSchemaInitializer
 {
     private static readonly Type[] EntityTypes = [typeof(KnWikiPage)];
 

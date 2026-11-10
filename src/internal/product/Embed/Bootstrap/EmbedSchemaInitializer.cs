@@ -6,7 +6,8 @@ using SailNora.Product.Embed.DBLayer;
 
 namespace SailNora.Product.Embed.Bootstrap;
 
-public sealed class EmbedSchemaInitializer : IScoped
+[Scoped]
+public sealed class EmbedSchemaInitializer
 {
     private static readonly Type[] EntityTypes = [typeof(KnEmbedChannel)];
 

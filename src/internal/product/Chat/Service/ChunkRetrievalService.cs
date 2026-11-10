@@ -20,7 +20,8 @@ public sealed class RetrievalHitDto
     public double Score { get; set; }
 }
 
-public sealed class ChunkRetrievalService : IScoped
+[Scoped]
+public sealed class ChunkRetrievalService
 {
     private readonly MooRepository<KnChunk> _chunks;
     private readonly ITextEmbedder _embeddings;

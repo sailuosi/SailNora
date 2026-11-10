@@ -6,7 +6,8 @@ using SailNora.Product.Mcp.Dtos;
 
 namespace SailNora.Product.Mcp.Service;
 
-public sealed class HitlService : IScoped
+[Scoped]
+public sealed class HitlService
 {
     private readonly MooRepository<KnHitlPending> _pendings;
 

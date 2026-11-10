@@ -18,7 +18,8 @@ namespace SailNora.Product.Agent.Service;
 /// <summary>
 /// F5/F5b/F5c Agent：原生 FC + 编排回退 + 可选 HITL 审批事件。
 /// </summary>
-public sealed class AgentChatService : IScoped
+[Scoped]
+public sealed class AgentChatService
 {
     private readonly SessionService _sessions;
     private readonly AgentService _agents;

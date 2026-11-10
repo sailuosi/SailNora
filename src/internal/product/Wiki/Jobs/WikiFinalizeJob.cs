@@ -8,7 +8,8 @@ using SailNora.Product.Wiki.Dtos;
 namespace SailNora.Product.Wiki.Jobs;
 
 /// <summary>对齐上游 asynq <c>wiki:finalize</c>：标记页面 finalized 并重建 <c>_index</c> 摘要（无 LLM）。</summary>
-public sealed class WikiFinalizeJob : IScoped
+[Scoped]
+public sealed class WikiFinalizeJob
 {
     private readonly MooRepository<KnWikiPage> _pages;
     private readonly ILogger<WikiFinalizeJob> _logger;
@@ -116,7 +117,8 @@ public interface IWikiFinalizeEnqueue
     void Enqueue(WikiFinalizePayload payload);
 }
 
-public sealed class InlineWikiFinalizeEnqueue : IWikiFinalizeEnqueue, IScoped
+[Scoped]
+public sealed class InlineWikiFinalizeEnqueue : IWikiFinalizeEnqueue
 {
     private readonly WikiFinalizeJob _job;
 

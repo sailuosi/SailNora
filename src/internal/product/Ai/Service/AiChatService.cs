@@ -5,7 +5,8 @@ using SailNora.Product.Ai.Dtos;
 
 namespace SailNora.Product.Ai.Service;
 
-public sealed class AiChatService : IScoped
+[Scoped]
+public sealed class AiChatService
 {
     private readonly AIAgent _agent;
 

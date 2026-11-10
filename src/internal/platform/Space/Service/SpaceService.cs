@@ -7,7 +7,8 @@ using SailNora.Platform.Space.Dtos;
 
 namespace SailNora.Platform.Space.Service;
 
-public sealed class SpaceService : IScoped
+[Scoped]
+public sealed class SpaceService
 {
     private readonly MooRepository<SysSpace> _spaces;
     private readonly MooRepository<SysSpaceMember> _members;

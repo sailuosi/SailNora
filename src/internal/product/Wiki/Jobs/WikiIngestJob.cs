@@ -10,7 +10,8 @@ using SailNora.Product.Wiki.Dtos;
 namespace SailNora.Product.Wiki.Jobs;
 
 /// <summary>对齐上游 asynq <c>wiki:ingest</c>：从已完成文档生成/更新 Wiki 页。</summary>
-public sealed class WikiIngestJob : IScoped
+[Scoped]
+public sealed class WikiIngestJob
 {
     private readonly MooRepository<KnKnowledge> _knowledges;
     private readonly MooRepository<KnChunk> _chunks;
@@ -118,7 +119,8 @@ public interface IWikiIngestEnqueue
     void Enqueue(WikiIngestPayload payload);
 }
 
-public sealed class InlineWikiIngestEnqueue : IWikiIngestEnqueue, IScoped
+[Scoped]
+public sealed class InlineWikiIngestEnqueue : IWikiIngestEnqueue
 {
     private readonly WikiIngestJob _job;
 

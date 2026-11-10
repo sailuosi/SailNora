@@ -1,0 +1,7 @@
+<Project>
+  <!-- 源生成落盘到 obj/generated，便于查阅；不在源码树，无二次 Compile 风险 -->
+  <PropertyGroup>
+    <EmitCompilerGeneratedFiles>true</EmitCompilerGeneratedFiles>
+    <CompilerGeneratedFilesOutputPath>$(BaseIntermediateOutputPath)generated</CompilerGeneratedFilesOutputPath>
+  </PropertyGroup>
+</Project>

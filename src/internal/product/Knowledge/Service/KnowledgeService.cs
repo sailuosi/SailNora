@@ -9,7 +9,8 @@ using SailNora.Product.Knowledge.Jobs;
 
 namespace SailNora.Product.Knowledge.Service;
 
-public sealed class KnowledgeService : IScoped
+[Scoped]
+public sealed class KnowledgeService
 {
     private readonly MooRepository<KnKnowledgeBase> _bases;
     private readonly MooRepository<KnKnowledge> _knowledges;

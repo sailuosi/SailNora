@@ -6,7 +6,8 @@ using SailNora.Product.Sandbox.Service;
 namespace SailNora.Product.Sandbox.Tools;
 
 /// <summary>对齐上游 shell_exec 工具名。</summary>
-public sealed class SandboxAgentTools : IScoped
+[Scoped]
+public sealed class SandboxAgentTools
 {
     private readonly SandboxRuntimeService _runtime;
 

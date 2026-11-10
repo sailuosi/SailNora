@@ -6,7 +6,8 @@ using SailNora.Product.Datasource.DBLayer;
 
 namespace SailNora.Product.Datasource.Bootstrap;
 
-public sealed class DatasourceSchemaInitializer : IScoped
+[Scoped]
+public sealed class DatasourceSchemaInitializer
 {
     private static readonly Type[] EntityTypes = [typeof(KnDatasource)];
 

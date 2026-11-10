@@ -10,7 +10,7 @@
 
 ## 决策
 
-1. **整体后端范式参考 sleveen-admin**（分层、Scrutor、配置分片、ApiResult、JWT Challenge 行为等）。  
+1. **整体后端范式参考 sleveen-admin**（分层、DI 三特性源生成、配置分片、ApiResult、JWT Challenge 行为等）。  
 2. **ORM = mooSQL.Ext**；表结构优先执行 WeKnora `src/sync/migrations`，mooSQL 负责访问。  
 3. **AI 基建 = MAF（Microsoft.Agents.AI）**；RAG/工具在其上扩展。  
 4. **定时与后台任务 = Hangfire**（Hangfire.MooSql 复用主库）。  

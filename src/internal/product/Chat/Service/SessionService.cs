@@ -5,7 +5,8 @@ using SailNora.Product.Chat.Dtos;
 
 namespace SailNora.Product.Chat.Service;
 
-public sealed class SessionService : IScoped
+[Scoped]
+public sealed class SessionService
 {
     private readonly MooRepository<KnSession> _sessions;
     private readonly MooRepository<KnMessage> _messages;

@@ -5,7 +5,8 @@ using SailNora.Product.Agent.Dtos;
 
 namespace SailNora.Product.Agent.Service;
 
-public sealed class AgentService : IScoped
+[Scoped]
+public sealed class AgentService
 {
     private readonly MooRepository<KnAgent> _agents;
 
