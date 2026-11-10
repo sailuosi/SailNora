@@ -14,6 +14,7 @@ public sealed class KnowledgeSchemaInitializer : IScoped
         typeof(KnKnowledgeBase),
         typeof(KnKnowledge),
         typeof(KnChunk),
+        typeof(KnChunkRevision),
         typeof(KnKnowledgeTag),
         typeof(KnFaqEntry)
     ];
@@ -26,6 +27,22 @@ public sealed class KnowledgeSchemaInitializer : IScoped
     {
         var db = _cash.getInstance(MooSqlSetup.DefaultPosition);
         db.useDDL().doInitTable(new DMLOption(), EntityTypes);
+        EnsureColumn(db, "KnChunk", "Kc_ContentRevision", "INTEGER NOT NULL DEFAULT 0");
         return Task.CompletedTask;
+    }
+
+    private static void EnsureColumn(DBInstance db, string table, string column, string ddlType)
+    {
+        try
+        {
+            var executor = new DBExecutor(db);
+            executor.ExeNonQuery(new SQLCmd(
+                $"ALTER TABLE {table} ADD COLUMN {column} {ddlType}",
+                new Paras()));
+        }
+        catch
+        {
+            // column already exists
+        }
     }
 }

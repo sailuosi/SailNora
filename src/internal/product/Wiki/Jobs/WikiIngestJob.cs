@@ -63,6 +63,7 @@ public sealed class WikiIngestJob : IScoped
             existing.Title = knowledge.Title;
             existing.Content = body.ToString().Trim();
             existing.KnowledgeBaseId = knowledge.KnowledgeBaseId;
+            existing.Status = WikiPageStatuses.Draft;
             existing.UpdateTime = now;
             _pages.Repo.Update(existing);
             _logger.LogInformation("wiki:ingest updated page {PageId} from {KnowledgeId}", existing.Id, knowledge.Id);
@@ -88,6 +89,7 @@ public sealed class WikiIngestJob : IScoped
             Slug = slug,
             Title = knowledge.Title,
             Content = body.ToString().Trim(),
+            Status = WikiPageStatuses.Draft,
             CreateTime = now,
             UpdateTime = now
         };

@@ -23,6 +23,22 @@ public sealed class McpSchemaInitializer : IScoped
     {
         var db = _cash.getInstance(MooSqlSetup.DefaultPosition);
         db.useDDL().doInitTable(new DMLOption(), EntityTypes);
+        EnsureColumn(db, "KnMcpService", "Kms_AuthToken", "TEXT NULL");
         return Task.CompletedTask;
+    }
+
+    private static void EnsureColumn(DBInstance db, string table, string column, string ddlType)
+    {
+        try
+        {
+            var executor = new DBExecutor(db);
+            executor.ExeNonQuery(new SQLCmd(
+                $"ALTER TABLE {table} ADD COLUMN {column} {ddlType}",
+                new Paras()));
+        }
+        catch
+        {
+            // column already exists
+        }
     }
 }

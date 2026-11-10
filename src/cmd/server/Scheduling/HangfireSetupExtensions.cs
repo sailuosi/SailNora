@@ -5,6 +5,7 @@ using SailNora.Foundation.Data;
 using SailNora.Foundation.Options;
 using SailNora.Product.Datasource.Jobs;
 using SailNora.Product.Knowledge.Jobs;
+using SailNora.Product.Memory.Jobs;
 using SailNora.Product.Wiki.Jobs;
 
 namespace SailNora.App.Scheduling;
@@ -38,7 +39,9 @@ public static class HangfireSetupExtensions
         // 覆盖 Knowledge/Wiki Setup 中的 Inline 实现
         services.AddScoped<IDocumentProcessEnqueue, HangfireDocumentProcessEnqueue>();
         services.AddScoped<IWikiIngestEnqueue, HangfireWikiIngestEnqueue>();
+        services.AddScoped<IWikiFinalizeEnqueue, HangfireWikiFinalizeEnqueue>();
         services.AddScoped<IDatasourceSyncEnqueue, HangfireDatasourceSyncEnqueue>();
+        services.AddScoped<IMemoryExtractEnqueue, HangfireMemoryExtractEnqueue>();
         return services;
     }
 

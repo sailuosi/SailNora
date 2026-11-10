@@ -32,6 +32,7 @@ public sealed class WikiService : IScoped
             Slug = slug,
             Title = input.Title.Trim(),
             Content = input.Content ?? string.Empty,
+            Status = WikiPageStatuses.Draft,
             CreateTime = now,
             UpdateTime = now
         };
@@ -47,6 +48,7 @@ public sealed class WikiService : IScoped
                 Id = p.Id,
                 Slug = p.Slug,
                 Title = p.Title,
+                Status = string.IsNullOrWhiteSpace(p.Status) ? WikiPageStatuses.Draft : p.Status,
                 UpdateTime = p.UpdateTime
             })
             .ToList();
@@ -96,6 +98,7 @@ public sealed class WikiService : IScoped
         Title = p.Title,
         Content = p.Content,
         KnowledgeBaseId = p.KnowledgeBaseId,
+        Status = string.IsNullOrWhiteSpace(p.Status) ? WikiPageStatuses.Draft : p.Status,
         CreateTime = p.CreateTime,
         UpdateTime = p.UpdateTime
     };

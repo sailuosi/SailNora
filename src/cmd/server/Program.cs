@@ -42,6 +42,16 @@ using SailNora.Product.Datasource.Service;
 using SailNora.Product.Embed;
 using SailNora.Product.Embed.Bootstrap;
 using SailNora.Product.Embed.Service;
+using SailNora.Product.Im;
+using SailNora.Product.Im.Bootstrap;
+using SailNora.Product.Im.Service;
+using SailNora.Product.Sandbox;
+using SailNora.Product.Sandbox.Bootstrap;
+using SailNora.Product.Sandbox.Service;
+using SailNora.Product.Memory;
+using SailNora.Product.Memory.Bootstrap;
+using SailNora.Product.Memory.Jobs;
+using SailNora.Product.Memory.Service;
 using SailNora.Product.Mcp;
 using SailNora.Product.Mcp.Bootstrap;
 using SailNora.Product.Mcp.Service;
@@ -64,6 +74,9 @@ builder.Services.AddSailNoraWiki();
 builder.Services.AddSailNoraMcp();
 builder.Services.AddSailNoraDatasource();
 builder.Services.AddSailNoraEmbed();
+builder.Services.AddSailNoraMemory();
+builder.Services.AddSailNoraIm();
+builder.Services.AddSailNoraSandbox();
 builder.Services.AddSailNoraHangfire(builder.Configuration);
 
 builder.Services.AddSailNoraServiceDiscovery(
@@ -90,9 +103,12 @@ builder.Services.AddSailNoraServiceDiscovery(
     typeof(TagService),
     typeof(FaqService),
     typeof(WikiService),
+    typeof(WikiGraphService),
     typeof(WikiIngestJob),
+    typeof(WikiFinalizeJob),
     typeof(WikiSchemaInitializer),
     typeof(McpServiceRegistry),
+    typeof(McpOutboundDialer),
     typeof(HitlService),
     typeof(McpSchemaInitializer),
     typeof(DatasourceService),
@@ -100,6 +116,16 @@ builder.Services.AddSailNoraServiceDiscovery(
     typeof(DatasourceSchemaInitializer),
     typeof(EmbedChannelService),
     typeof(EmbedSchemaInitializer),
+    typeof(MemoryService),
+    typeof(MemoryExtractJob),
+    typeof(MemorySchemaInitializer),
+    typeof(ImChannelService),
+    typeof(ImSchemaInitializer),
+    typeof(SandboxConfigService),
+    typeof(SandboxRuntimeService),
+    typeof(HostSandboxRunner),
+    typeof(DockerSandboxRunner),
+    typeof(SandboxSchemaInitializer),
     typeof(ProductAssemblyMarker));
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -200,6 +226,9 @@ using (var scope = app.Services.CreateScope())
     await scope.ServiceProvider.GetRequiredService<McpSchemaInitializer>().InitializeAsync();
     await scope.ServiceProvider.GetRequiredService<DatasourceSchemaInitializer>().InitializeAsync();
     await scope.ServiceProvider.GetRequiredService<EmbedSchemaInitializer>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<MemorySchemaInitializer>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<ImSchemaInitializer>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<SandboxSchemaInitializer>().InitializeAsync();
 }
 
 app.UseSwagger();

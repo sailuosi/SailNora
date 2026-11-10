@@ -26,6 +26,10 @@ public class KnWikiPage
     [SooColumn("Kwp_Content", Length = -1, CanBeNull = false)]
     public string Content { get; set; } = string.Empty;
 
+    /// <summary>draft | finalized</summary>
+    [SooColumn("Kwp_Status", Length = 32, CanBeNull = false)]
+    public string Status { get; set; } = "draft";
+
     [SooColumn("Kwp_CreateTime", CanBeNull = false)]
     public DateTime CreateTime { get; set; }
 

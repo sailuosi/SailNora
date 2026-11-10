@@ -52,22 +52,35 @@ public sealed class McpServiceController : ControllerBase
 
     [HttpGet("api/v1/mcp-services/{id}/tools")]
     [Permission("space:read")]
-    public ActionResult<List<McpToolInfoDto>> Tools(string id)
+    public async Task<ActionResult<List<McpToolInfoDto>>> Tools(string id, CancellationToken cancellationToken)
     {
         var spaceId = CurrentUser.GetTenantId(User);
         if (spaceId is null)
             return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
-        return Ok(_mcp.ListServiceTools(spaceId.Value, id));
+        return Ok(await _mcp.ListServiceToolsAsync(spaceId.Value, id, cancellationToken));
     }
 
     [HttpPost("api/v1/mcp-services/{id}/test")]
     [Permission("space:read")]
-    public ActionResult<object> Test(string id)
+    public async Task<ActionResult<object>> Test(string id, CancellationToken cancellationToken)
     {
         var spaceId = CurrentUser.GetTenantId(User);
         if (spaceId is null)
             return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
-        return Ok(_mcp.TestService(spaceId.Value, id));
+        return Ok(await _mcp.TestServiceAsync(spaceId.Value, id, cancellationToken));
+    }
+
+    [HttpPost("api/v1/mcp-services/{id}/tools/call")]
+    [Permission("space:read")]
+    public async Task<ActionResult<McpCallToolResultDto>> CallTool(
+        string id,
+        [FromBody] McpCallToolInput input,
+        CancellationToken cancellationToken)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(await _mcp.CallServiceToolAsync(spaceId.Value, id, input, cancellationToken));
     }
 
     [HttpDelete("api/v1/mcp-services/{id}")]

@@ -13,7 +13,7 @@ using SailNora.Product.Knowledge.Jobs;
 
 namespace SailNora.Product.Datasource.Jobs;
 
-/// <summary>对齐上游 asynq <c>datasource:sync</c>（F6 仅 RSS）。</summary>
+/// <summary>对齐上游 asynq <c>datasource:sync</c>（F6：rss + gitlab）。</summary>
 public sealed class DatasourceSyncJob : IScoped
 {
     private readonly MooRepository<KnDatasource> _sources;
@@ -58,9 +58,6 @@ public sealed class DatasourceSyncJob : IScoped
             };
         }
 
-        if (!string.Equals(ds.Type, DatasourceTypes.Rss, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException($"暂不支持数据源类型: {ds.Type}");
-
         var kb = _bases.Repo.GetById(ds.KnowledgeBaseId);
         if (kb is null || kb.SpaceId != ds.SpaceId)
             throw new InvalidOperationException("绑定知识库无效");
@@ -71,57 +68,12 @@ public sealed class DatasourceSyncJob : IScoped
 
         try
         {
-            var xml = await FetchFeedAsync(ds.Url, cancellationToken);
-            var items = RssFeedParser.Parse(xml);
-            var imported = 0;
-            var skipped = 0;
-
-            foreach (var item in items.Take(50))
+            var (imported, skipped) = ds.Type.ToLowerInvariant() switch
             {
-                var hash = Convert.ToHexString(
-                    SHA256.HashData(Encoding.UTF8.GetBytes(ds.Id + "|" + item.Guid))).ToLowerInvariant();
-                if (_knowledges.Repo.GetFirst(k =>
-                        k.KnowledgeBaseId == ds.KnowledgeBaseId && k.FileHash == hash) is not null)
-                {
-                    skipped++;
-                    continue;
-                }
-
-                var knowledgeId = Guid.NewGuid().ToString();
-                var fileName = Sanitize($"{item.Title}.md");
-                var relative = $"{ds.SpaceId:N}/{knowledgeId}/{fileName}";
-                var body = $"# {item.Title}\n\nSource: {item.Link}\n\n{item.Content}\n";
-                await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));
-                await _storage.SaveAsync(stream, relative, cancellationToken);
-
-                _knowledges.Repo.Insert(new KnKnowledge
-                {
-                    Id = knowledgeId,
-                    SpaceId = ds.SpaceId,
-                    KnowledgeBaseId = ds.KnowledgeBaseId,
-                    Type = "rss",
-                    Title = item.Title,
-                    FileName = fileName,
-                    FileType = "text/markdown",
-                    FileSize = stream.Length,
-                    FilePath = relative,
-                    FileHash = hash,
-                    ParseStatus = ParseStatuses.Pending,
-                    CreateTime = DateTime.Now
-                });
-
-                _enqueue.Enqueue(new DocumentProcessPayload
-                {
-                    RequestId = Guid.NewGuid().ToString("N"),
-                    SpaceId = ds.SpaceId,
-                    KnowledgeId = knowledgeId,
-                    KnowledgeBaseId = ds.KnowledgeBaseId,
-                    FilePath = relative,
-                    FileName = fileName,
-                    FileType = "text/markdown"
-                });
-                imported++;
-            }
+                DatasourceTypes.Rss => await SyncRssAsync(ds, cancellationToken),
+                DatasourceTypes.Gitlab => await SyncGitlabAsync(ds, cancellationToken),
+                _ => throw new InvalidOperationException($"暂不支持数据源类型: {ds.Type}")
+            };
 
             ds.SyncStatus = DatasourceSyncStatuses.Completed;
             ds.LastSyncAt = DateTime.Now;
@@ -130,8 +82,8 @@ public sealed class DatasourceSyncJob : IScoped
             _sources.Repo.Update(ds);
 
             _logger.LogInformation(
-                "datasource:sync completed {Id} imported={Imported} skipped={Skipped}",
-                ds.Id, imported, skipped);
+                "datasource:sync completed {Id} type={Type} imported={Imported} skipped={Skipped}",
+                ds.Id, ds.Type, imported, skipped);
 
             return new DatasourceSyncResultDto
             {
@@ -156,7 +108,100 @@ public sealed class DatasourceSyncJob : IScoped
         }
     }
 
-    private async Task<string> FetchFeedAsync(string url, CancellationToken cancellationToken)
+    private async Task<(int Imported, int Skipped)> SyncRssAsync(KnDatasource ds, CancellationToken cancellationToken)
+    {
+        var xml = await FetchTextAsync(ds.Url, cancellationToken);
+        var items = RssFeedParser.Parse(xml);
+        var imported = 0;
+        var skipped = 0;
+
+        foreach (var item in items.Take(50))
+        {
+            var body = $"# {item.Title}\n\nSource: {item.Link}\n\n{item.Content}\n";
+            var (ok, wasSkip) = await ImportMarkdownAsync(
+                ds, item.Guid, item.Title, body, knowledgeType: "rss", cancellationToken);
+            if (wasSkip) skipped++;
+            else if (ok) imported++;
+        }
+
+        return (imported, skipped);
+    }
+
+    private async Task<(int Imported, int Skipped)> SyncGitlabAsync(KnDatasource ds, CancellationToken cancellationToken)
+    {
+        var json = await FetchTextAsync(ds.Url, cancellationToken);
+        var items = GitLabTreeParser.Parse(json);
+        var imported = 0;
+        var skipped = 0;
+
+        foreach (var item in items.Take(50))
+        {
+            var title = Path.GetFileNameWithoutExtension(item.Path);
+            if (string.IsNullOrWhiteSpace(title))
+                title = item.Path;
+            var content = string.IsNullOrWhiteSpace(item.Content)
+                ? $"(gitlab blob) `{item.Path}`"
+                : item.Content!;
+            var body = $"# {title}\n\nPath: `{item.Path}`\n\n{content}\n";
+            var (ok, wasSkip) = await ImportMarkdownAsync(
+                ds, item.Guid, title, body, knowledgeType: "gitlab", cancellationToken);
+            if (wasSkip) skipped++;
+            else if (ok) imported++;
+        }
+
+        return (imported, skipped);
+    }
+
+    private async Task<(bool Ok, bool Skipped)> ImportMarkdownAsync(
+        KnDatasource ds,
+        string guid,
+        string title,
+        string body,
+        string knowledgeType,
+        CancellationToken cancellationToken)
+    {
+        var hash = Convert.ToHexString(
+            SHA256.HashData(Encoding.UTF8.GetBytes(ds.Id + "|" + guid))).ToLowerInvariant();
+        if (_knowledges.Repo.GetFirst(k =>
+                k.KnowledgeBaseId == ds.KnowledgeBaseId && k.FileHash == hash) is not null)
+            return (false, true);
+
+        var knowledgeId = Guid.NewGuid().ToString();
+        var fileName = Sanitize($"{title}.md");
+        var relative = $"{ds.SpaceId:N}/{knowledgeId}/{fileName}";
+        await using var stream = new MemoryStream(Encoding.UTF8.GetBytes(body));
+        await _storage.SaveAsync(stream, relative, cancellationToken);
+
+        _knowledges.Repo.Insert(new KnKnowledge
+        {
+            Id = knowledgeId,
+            SpaceId = ds.SpaceId,
+            KnowledgeBaseId = ds.KnowledgeBaseId,
+            Type = knowledgeType,
+            Title = title,
+            FileName = fileName,
+            FileType = "text/markdown",
+            FileSize = stream.Length,
+            FilePath = relative,
+            FileHash = hash,
+            ParseStatus = ParseStatuses.Pending,
+            CreateTime = DateTime.Now
+        });
+
+        _enqueue.Enqueue(new DocumentProcessPayload
+        {
+            RequestId = Guid.NewGuid().ToString("N"),
+            SpaceId = ds.SpaceId,
+            KnowledgeId = knowledgeId,
+            KnowledgeBaseId = ds.KnowledgeBaseId,
+            FilePath = relative,
+            FileName = fileName,
+            FileType = "text/markdown"
+        });
+        return (true, false);
+    }
+
+    private async Task<string> FetchTextAsync(string url, CancellationToken cancellationToken)
     {
         var client = _httpClientFactory.CreateClient("datasource");
         using var response = await client.GetAsync(url, cancellationToken);

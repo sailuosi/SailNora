@@ -20,6 +20,10 @@ public class KnMcpService
     [SooColumn("Kms_Url", Length = 1024, CanBeNull = false)]
     public string Url { get; set; } = string.Empty;
 
+    /// <summary>可选 Bearer token（出站 dial 用；列表 API 不回传明文）。</summary>
+    [SooColumn("Kms_AuthToken", Length = 512, CanBeNull = true)]
+    public string? AuthToken { get; set; }
+
     [SooColumn("Kms_Enabled", CanBeNull = false)]
     public bool Enabled { get; set; } = true;
 

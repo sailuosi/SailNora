@@ -14,6 +14,7 @@ public sealed class KnowledgeService : IScoped
     private readonly MooRepository<KnKnowledgeBase> _bases;
     private readonly MooRepository<KnKnowledge> _knowledges;
     private readonly MooRepository<KnChunk> _chunks;
+    private readonly MooRepository<KnChunkRevision> _revisions;
     private readonly ILocalFileStorage _storage;
     private readonly IDocumentProcessEnqueue _enqueue;
     private readonly ITextEmbedder _embedder;
@@ -22,6 +23,7 @@ public sealed class KnowledgeService : IScoped
         MooRepository<KnKnowledgeBase> bases,
         MooRepository<KnKnowledge> knowledges,
         MooRepository<KnChunk> chunks,
+        MooRepository<KnChunkRevision> revisions,
         ILocalFileStorage storage,
         IDocumentProcessEnqueue enqueue,
         ITextEmbedder embedder)
@@ -29,6 +31,7 @@ public sealed class KnowledgeService : IScoped
         _bases = bases;
         _knowledges = knowledges;
         _chunks = chunks;
+        _revisions = revisions;
         _storage = storage;
         _enqueue = enqueue;
         _embedder = embedder;
@@ -189,20 +192,93 @@ public sealed class KnowledgeService : IScoped
         if (chunk.SpaceId != spaceId || chunk.KnowledgeId != knowledgeId)
             throw new InvalidOperationException("分块与知识不匹配");
 
+        SnapshotRevision(chunk);
+
         chunk.Content = input.Content.Trim();
         var vector = await _embedder.EmbedAsync(chunk.Content, cancellationToken);
         chunk.EmbeddingJson = EmbeddingCodec.ToJson(vector);
+        chunk.ContentRevision += 1;
+        _chunks.Repo.Update(chunk);
+        return ToChunkDto(chunk);
+    }
+
+    public List<ChunkRevisionDto> ListChunkRevisions(Guid spaceId, string knowledgeId, string chunkId)
+    {
+        var chunk = RequireOwnedChunk(spaceId, knowledgeId, chunkId);
+        return _revisions.Repo.GetList(r => r.ChunkId == chunk.Id && r.SpaceId == spaceId)
+            .OrderByDescending(r => r.Revision)
+            .Select(r => new ChunkRevisionDto
+            {
+                Revision = r.Revision,
+                Content = r.Content,
+                HasEmbedding = !string.IsNullOrWhiteSpace(r.EmbeddingJson),
+                EditedAt = r.EditedAt
+            })
+            .ToList();
+    }
+
+    public ChunkDto RevertChunk(Guid spaceId, string knowledgeId, string chunkId, RevertChunkInput input)
+    {
+        var chunk = RequireOwnedChunk(spaceId, knowledgeId, chunkId);
+        if (input.ExpectedRevision is int expected && chunk.ContentRevision != expected)
+            throw new InvalidOperationException(
+                $"修订冲突：期望 {expected}，当前 {chunk.ContentRevision}");
+
+        KnChunkRevision? hist;
+        if (input.Revision is int target)
+        {
+            hist = _revisions.Repo.GetFirst(r =>
+                r.ChunkId == chunk.Id && r.SpaceId == spaceId && r.Revision == target);
+        }
+        else
+        {
+            hist = _revisions.Repo.GetList(r => r.ChunkId == chunk.Id && r.SpaceId == spaceId)
+                .OrderByDescending(r => r.Revision)
+                .FirstOrDefault();
+        }
+
+        if (hist is null)
+            throw new InvalidOperationException("无可回滚的历史修订");
+
+        SnapshotRevision(chunk);
+        chunk.Content = hist.Content;
+        chunk.EmbeddingJson = hist.EmbeddingJson;
+        chunk.ContentRevision += 1;
         _chunks.Repo.Update(chunk);
         return ToChunkDto(chunk);
     }
 
     public void DeleteChunk(Guid spaceId, string knowledgeId, string chunkId)
     {
+        var chunk = RequireOwnedChunk(spaceId, knowledgeId, chunkId);
+        var revs = _revisions.Repo.GetList(r => r.ChunkId == chunk.Id);
+        foreach (var r in revs)
+            _revisions.Repo.Delete(r);
+        _chunks.Repo.Delete(chunk);
+    }
+
+    private KnChunk RequireOwnedChunk(Guid spaceId, string knowledgeId, string chunkId)
+    {
         var chunk = _chunks.Repo.GetById(chunkId)
                     ?? throw new InvalidOperationException("分块不存在");
         if (chunk.SpaceId != spaceId || chunk.KnowledgeId != knowledgeId)
             throw new InvalidOperationException("分块与知识不匹配");
-        _chunks.Repo.Delete(chunk);
+        return chunk;
+    }
+
+    private void SnapshotRevision(KnChunk chunk)
+    {
+        _revisions.Repo.Insert(new KnChunkRevision
+        {
+            Id = Guid.NewGuid().ToString(),
+            SpaceId = chunk.SpaceId,
+            ChunkId = chunk.Id,
+            KnowledgeId = chunk.KnowledgeId,
+            Revision = chunk.ContentRevision,
+            Content = chunk.Content,
+            EmbeddingJson = chunk.EmbeddingJson,
+            EditedAt = DateTime.Now
+        });
     }
 
     private static string SanitizeFileName(string fileName)
@@ -244,6 +320,7 @@ public sealed class KnowledgeService : IScoped
         Content = c.Content,
         ChunkIndex = c.ChunkIndex,
         ChunkType = c.ChunkType,
-        HasEmbedding = !string.IsNullOrWhiteSpace(c.EmbeddingJson)
+        HasEmbedding = !string.IsNullOrWhiteSpace(c.EmbeddingJson),
+        ContentRevision = c.ContentRevision
     };
 }

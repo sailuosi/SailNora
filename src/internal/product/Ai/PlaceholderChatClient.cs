@@ -69,22 +69,33 @@ public sealed class PlaceholderChatClient : IChatClient, ISingleton
         if (messages.Any(m => m.Contents.OfType<FunctionCallContent>().Any()))
             return null;
 
-        var fn = tools.OfType<AIFunction>().FirstOrDefault(t => t.Name == "search_knowledge")
-                 ?? tools.OfType<AIFunction>().FirstOrDefault();
+        var query = ExtractLastUserText(messages) ?? "knowledge";
+        var functions = tools.OfType<AIFunction>().ToList();
+        var shell = functions.FirstOrDefault(t => t.Name == "shell_exec");
+        var preferShell = shell is not null && LooksLikeShellRequest(query);
+        var fn = preferShell
+            ? shell
+            : functions.FirstOrDefault(t => t.Name == "search_knowledge") ?? functions.FirstOrDefault();
         if (fn is null)
             return null;
 
-        var query = ExtractLastUserText(messages) ?? "knowledge";
         IDictionary<string, object?> args = fn.Name switch
         {
             "search_knowledge" => new Dictionary<string, object?> { ["query"] = query },
             "list_documents" => new Dictionary<string, object?>(),
             "read_document" => new Dictionary<string, object?> { ["knowledge_id"] = "" },
+            "shell_exec" => new Dictionary<string, object?> { ["command"] = "echo sail-nora-sandbox" },
             _ => new Dictionary<string, object?>()
         };
 
         return new FunctionCallContent($"ph_{Guid.NewGuid():N}"[..16], fn.Name, args);
     }
+
+    private static bool LooksLikeShellRequest(string query) =>
+        query.Contains("shell", StringComparison.OrdinalIgnoreCase)
+        || query.Contains("echo", StringComparison.OrdinalIgnoreCase)
+        || query.Contains("执行", StringComparison.Ordinal)
+        || query.Contains("命令", StringComparison.Ordinal);
 
     private static string? ExtractLastUserText(IList<ChatMessage> messages)
     {

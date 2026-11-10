@@ -11,6 +11,7 @@ using SailNora.Product.Chat.Dtos;
 using SailNora.Product.Chat.Service;
 using SailNora.Product.Mcp.DBLayer;
 using SailNora.Product.Mcp.Service;
+using SailNora.Product.Sandbox.Tools;
 
 namespace SailNora.Product.Agent.Service;
 
@@ -22,6 +23,7 @@ public sealed class AgentChatService : IScoped
     private readonly SessionService _sessions;
     private readonly AgentService _agents;
     private readonly KnowledgeAgentTools _tools;
+    private readonly SandboxAgentTools _sandboxTools;
     private readonly AgentNativeToolFactory _toolFactory;
     private readonly HitlService _hitl;
     private readonly AIAgent _agent;
@@ -31,6 +33,7 @@ public sealed class AgentChatService : IScoped
         SessionService sessions,
         AgentService agents,
         KnowledgeAgentTools tools,
+        SandboxAgentTools sandboxTools,
         AgentNativeToolFactory toolFactory,
         HitlService hitl,
         AIAgent agent,
@@ -39,6 +42,7 @@ public sealed class AgentChatService : IScoped
         _sessions = sessions;
         _agents = agents;
         _tools = tools;
+        _sandboxTools = sandboxTools;
         _toolFactory = toolFactory;
         _hitl = hitl;
         _agent = agent;
@@ -109,7 +113,16 @@ public sealed class AgentChatService : IScoped
                            new { query = input.Query.Trim() }, cancellationToken))
             yield return hitlEvt;
 
-        var tools = _toolFactory.Create(spaceId, input.KnowledgeBaseIds, input.KnowledgeIds);
+        if (!string.IsNullOrWhiteSpace(input.SandboxConfigId) && _aiOptions.HitlEnabled)
+        {
+            await foreach (var hitlEvt in EmitHitlIfNeededAsync(
+                               spaceId, sessionId, "shell_exec",
+                               new { sandbox_config_id = input.SandboxConfigId }, cancellationToken))
+                yield return hitlEvt;
+        }
+
+        var tools = _toolFactory.Create(
+            spaceId, input.KnowledgeBaseIds, input.KnowledgeIds, input.SandboxConfigId);
         _sessions.AddMessage(spaceId, sessionId, "user", input.Query.Trim());
 
         var messages = new List<ChatMessage>
@@ -242,6 +255,34 @@ public sealed class AgentChatService : IScoped
                 name = "list_documents",
                 success = true,
                 result = listResult
+            });
+        }
+
+        if (!string.IsNullOrWhiteSpace(input.SandboxConfigId)
+            && (q.Contains("shell", StringComparison.OrdinalIgnoreCase)
+                || q.Contains("执行", StringComparison.Ordinal)
+                || q.Contains("命令", StringComparison.Ordinal)
+                || q.Contains("echo", StringComparison.OrdinalIgnoreCase)))
+        {
+            var shellArgs = new { command = "echo sail-nora-sandbox", sandbox_config_id = input.SandboxConfigId };
+            await foreach (var hitlEvt in EmitHitlIfNeededAsync(
+                               spaceId, sessionId, "shell_exec", shellArgs, cancellationToken))
+                yield return hitlEvt;
+
+            yield return Evt("tool_call", new
+            {
+                tool_call_id = "tc_shell",
+                name = "shell_exec",
+                arguments = shellArgs
+            });
+            var shellResult = await _sandboxTools.ShellExecAsync(
+                spaceId, input.SandboxConfigId!, "echo sail-nora-sandbox", cancellationToken: cancellationToken);
+            yield return Evt("tool_result", new
+            {
+                tool_call_id = "tc_shell",
+                name = "shell_exec",
+                success = true,
+                result = shellResult
             });
         }
 

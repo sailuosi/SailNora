@@ -39,11 +39,28 @@ public sealed class ChunkDto
     public int ChunkIndex { get; set; }
     public string ChunkType { get; set; } = "text";
     public bool HasEmbedding { get; set; }
+    public int ContentRevision { get; set; }
 }
 
 public sealed class UpdateChunkInput
 {
     public string Content { get; set; } = string.Empty;
+}
+
+public sealed class RevertChunkInput
+{
+    /// <summary>目标历史修订号；为空则回滚到最近一次保存的历史。</summary>
+    public int? Revision { get; set; }
+    /// <summary>乐观锁：若指定则须与当前 ContentRevision 一致。</summary>
+    public int? ExpectedRevision { get; set; }
+}
+
+public sealed class ChunkRevisionDto
+{
+    public int Revision { get; set; }
+    public string Content { get; set; } = string.Empty;
+    public bool HasEmbedding { get; set; }
+    public DateTime EditedAt { get; set; }
 }
 
 public sealed class DocumentProcessPayload

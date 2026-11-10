@@ -107,6 +107,29 @@ public sealed class KnowledgeBaseController : ControllerBase
         return Ok(await _knowledge.UpdateChunkAsync(spaceId.Value, knowledgeId, chunkId, input, cancellationToken));
     }
 
+    [HttpGet("api/v1/chunks/{knowledgeId}/{chunkId}/revisions")]
+    [Permission("space:read")]
+    public ActionResult<List<ChunkRevisionDto>> ListChunkRevisions(string knowledgeId, string chunkId)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(_knowledge.ListChunkRevisions(spaceId.Value, knowledgeId, chunkId));
+    }
+
+    [HttpPost("api/v1/chunks/{knowledgeId}/{chunkId}/revert")]
+    [Permission("space:read")]
+    public ActionResult<ChunkDto> RevertChunk(
+        string knowledgeId,
+        string chunkId,
+        [FromBody] RevertChunkInput? input)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(_knowledge.RevertChunk(spaceId.Value, knowledgeId, chunkId, input ?? new RevertChunkInput()));
+    }
+
     [HttpDelete("api/v1/chunks/{knowledgeId}/{chunkId}")]
     [Permission("space:read")]
     public ActionResult DeleteChunk(string knowledgeId, string chunkId)

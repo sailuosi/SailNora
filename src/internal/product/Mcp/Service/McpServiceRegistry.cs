@@ -11,13 +11,16 @@ public sealed class McpServiceRegistry : IScoped
 {
     private readonly MooRepository<KnMcpService> _services;
     private readonly MooRepository<KnMcpEndpoint> _endpoints;
+    private readonly McpOutboundDialer _dialer;
 
     public McpServiceRegistry(
         MooRepository<KnMcpService> services,
-        MooRepository<KnMcpEndpoint> endpoints)
+        MooRepository<KnMcpEndpoint> endpoints,
+        McpOutboundDialer dialer)
     {
         _services = services;
         _endpoints = endpoints;
+        _dialer = dialer;
     }
 
     public McpServiceDto CreateService(Guid spaceId, CreateMcpServiceInput input)
@@ -34,6 +37,7 @@ public sealed class McpServiceRegistry : IScoped
             Name = input.Name.Trim(),
             Transport = string.IsNullOrWhiteSpace(input.Transport) ? "sse" : input.Transport.Trim(),
             Url = input.Url.Trim(),
+            AuthToken = string.IsNullOrWhiteSpace(input.AuthToken) ? null : input.AuthToken.Trim(),
             Enabled = true,
             RequireApproval = input.RequireApproval,
             CreateTime = DateTime.Now
@@ -65,33 +69,77 @@ public sealed class McpServiceRegistry : IScoped
         _services.Repo.Delete(s);
     }
 
-    /// <summary>F5c：尚未真实拨号，返回占位工具目录。</summary>
-    public List<McpToolInfoDto> ListServiceTools(Guid spaceId, string id)
+    public async Task<List<McpToolInfoDto>> ListServiceToolsAsync(
+        Guid spaceId, string id, CancellationToken cancellationToken = default)
     {
-        var s = GetService(spaceId, id)
-                ?? throw new InvalidOperationException("MCP 服务不存在");
-        return
-        [
-            new McpToolInfoDto
-            {
-                Name = "echo",
-                Description = $"Placeholder tool for MCP service '{s.Name}'",
-                RequireApproval = s.RequireApproval
-            }
-        ];
+        var entity = RequireServiceEntity(spaceId, id);
+        if (!McpOutboundDialer.IsHttpTransport(entity.Transport))
+        {
+            return
+            [
+                new McpToolInfoDto
+                {
+                    Name = "echo",
+                    Description = $"Stub tool for transport '{entity.Transport}' (no dial)",
+                    RequireApproval = entity.RequireApproval
+                }
+            ];
+        }
+
+        var dial = await _dialer.ProbeAsync(entity.Transport, entity.Url, entity.AuthToken, cancellationToken);
+        if (!dial.Ok)
+            throw new InvalidOperationException(dial.Message);
+
+        foreach (var t in dial.Tools)
+            t.RequireApproval = entity.RequireApproval;
+        return dial.Tools;
     }
 
-    public object TestService(Guid spaceId, string id)
+    public async Task<object> TestServiceAsync(
+        Guid spaceId, string id, CancellationToken cancellationToken = default)
     {
-        var s = GetService(spaceId, id)
-                ?? throw new InvalidOperationException("MCP 服务不存在");
+        var entity = RequireServiceEntity(spaceId, id);
+        var dial = await _dialer.ProbeAsync(entity.Transport, entity.Url, entity.AuthToken, cancellationToken);
         return new
         {
-            ok = true,
-            service_id = s.Id,
-            transport = s.Transport,
-            message = "F5c stub: outbound MCP dial not wired yet"
+            ok = dial.Ok,
+            service_id = entity.Id,
+            transport = entity.Transport,
+            protocol_version = dial.ProtocolVersion,
+            server_name = dial.ServerName,
+            tools = dial.Tools.Select(t => t.Name).ToList(),
+            message = dial.Message
         };
+    }
+
+    public async Task<McpCallToolResultDto> CallServiceToolAsync(
+        Guid spaceId,
+        string id,
+        McpCallToolInput input,
+        CancellationToken cancellationToken = default)
+    {
+        var entity = RequireServiceEntity(spaceId, id);
+        if (!entity.Enabled)
+            throw new InvalidOperationException("MCP 服务未启用");
+        if (string.IsNullOrWhiteSpace(input.ToolName))
+            throw new InvalidOperationException("toolName 不能为空");
+
+        return await _dialer.CallToolAsync(
+            entity.Transport,
+            entity.Url,
+            input.ToolName,
+            input.Arguments,
+            entity.AuthToken,
+            cancellationToken);
+    }
+
+    private KnMcpService RequireServiceEntity(Guid spaceId, string id)
+    {
+        var s = _services.Repo.GetById(id)
+                ?? throw new InvalidOperationException("MCP 服务不存在");
+        if (s.SpaceId != spaceId)
+            throw new UnauthorizedAccessException("无权访问");
+        return s;
     }
 
     public McpEndpointDto CreateEndpoint(Guid spaceId, CreateMcpEndpointInput input)

@@ -5,6 +5,7 @@ public sealed class CreateMcpServiceInput
     public string Name { get; set; } = string.Empty;
     public string Transport { get; set; } = "sse";
     public string Url { get; set; } = string.Empty;
+    public string? AuthToken { get; set; }
     public bool RequireApproval { get; set; }
 }
 
@@ -40,6 +41,27 @@ public sealed class McpToolInfoDto
     public string Name { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
     public bool RequireApproval { get; set; }
+}
+
+public sealed class McpCallToolInput
+{
+    public string ToolName { get; set; } = string.Empty;
+    public Dictionary<string, object?>? Arguments { get; set; }
+}
+
+public sealed class McpCallToolContentDto
+{
+    public string Type { get; set; } = "text";
+    public string Text { get; set; } = string.Empty;
+}
+
+public sealed class McpCallToolResultDto
+{
+    public bool Ok { get; set; }
+    public bool IsError { get; set; }
+    public string ToolName { get; set; } = string.Empty;
+    public List<McpCallToolContentDto> Content { get; set; } = [];
+    public string? Message { get; set; }
 }
 
 public sealed class ResolveHitlInput

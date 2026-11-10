@@ -44,6 +44,32 @@ public sealed class DatasourceController : ControllerBase
         return Content(xml, "application/rss+xml; charset=utf-8");
     }
 
+    /// <summary>本地冒烟用样例 GitLab tree（无需外网/PAT）。</summary>
+    [HttpGet("api/v1/datasources/sample-gitlab-tree")]
+    [AllowAnonymous]
+    public ContentResult SampleGitlabTree()
+    {
+        const string json = """
+            {
+              "tree": [
+                {
+                  "id": "blob-refund-1",
+                  "path": "docs/refund.md",
+                  "type": "blob",
+                  "content": "GitLab 样例：购买后 14 天内可退款。"
+                },
+                {
+                  "id": "blob-install-1",
+                  "path": "docs/install.md",
+                  "type": "blob",
+                  "content": "GitLab 样例：先检查依赖再安装。"
+                }
+              ]
+            }
+            """;
+        return Content(json, "application/json; charset=utf-8");
+    }
+
     [HttpPost("api/v1/datasources")]
     [Authorize]
     [Permission("space:read")]

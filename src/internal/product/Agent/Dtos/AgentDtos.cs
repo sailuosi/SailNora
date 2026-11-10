@@ -30,4 +30,7 @@ public sealed class AgentChatInput
 
     [JsonPropertyName("agent_id")]
     public string? AgentId { get; set; }
+
+    [JsonPropertyName("sandbox_config_id")]
+    public string? SandboxConfigId { get; set; }
 }

@@ -40,9 +40,9 @@ public sealed class DatasourceService : IScoped
         if (kb.SpaceId != spaceId)
             throw new UnauthorizedAccessException("知识库不属于当前空间");
 
-        var type = string.IsNullOrWhiteSpace(input.Type) ? DatasourceTypes.Rss : input.Type.Trim();
-        if (!string.Equals(type, DatasourceTypes.Rss, StringComparison.OrdinalIgnoreCase))
-            throw new InvalidOperationException("F6 仅支持 type=rss");
+        var type = string.IsNullOrWhiteSpace(input.Type) ? DatasourceTypes.Rss : input.Type.Trim().ToLowerInvariant();
+        if (type is not (DatasourceTypes.Rss or DatasourceTypes.Gitlab))
+            throw new InvalidOperationException("F6 支持 type=rss|gitlab");
 
         var entity = new KnDatasource
         {
@@ -50,7 +50,7 @@ public sealed class DatasourceService : IScoped
             SpaceId = spaceId,
             KnowledgeBaseId = kb.Id,
             Name = input.Name.Trim(),
-            Type = DatasourceTypes.Rss,
+            Type = type,
             Url = input.Url.Trim(),
             Enabled = true,
             SyncStatus = DatasourceSyncStatuses.Idle,

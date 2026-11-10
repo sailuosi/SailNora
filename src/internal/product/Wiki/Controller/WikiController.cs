@@ -15,12 +15,32 @@ namespace SailNora.Product.Wiki.Controller;
 public sealed class WikiController : ControllerBase
 {
     private readonly WikiService _wiki;
+    private readonly WikiGraphService _graph;
     private readonly WikiIngestJob _ingest;
+    private readonly WikiFinalizeJob _finalize;
 
-    public WikiController(WikiService wiki, WikiIngestJob ingest)
+    public WikiController(
+        WikiService wiki,
+        WikiGraphService graph,
+        WikiIngestJob ingest,
+        WikiFinalizeJob finalize)
     {
         _wiki = wiki;
+        _graph = graph;
         _ingest = ingest;
+        _finalize = finalize;
+    }
+
+    [HttpGet("api/v1/wiki/graph")]
+    [Permission("space:read")]
+    public ActionResult<WikiGraphDataDto> Graph(
+        [FromQuery] string? knowledgeBaseId = null,
+        [FromQuery] int limit = 500)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(_graph.Build(spaceId.Value, knowledgeBaseId, limit));
     }
 
     [HttpPost("api/v1/wiki/ingest")]
@@ -43,6 +63,27 @@ public sealed class WikiController : ControllerBase
         }, cancellationToken);
         if (result is null)
             return NotFound(ApiResult.Fail("知识不存在"));
+        return Ok(result);
+    }
+
+    [HttpPost("api/v1/wiki/finalize")]
+    [Permission("space:read")]
+    public async Task<ActionResult<WikiFinalizeResultDto>> Finalize(
+        [FromBody] WikiFinalizeRequest? input,
+        CancellationToken cancellationToken)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+
+        var result = await _finalize.ExecuteAsync(new WikiFinalizePayload
+        {
+            RequestId = Guid.NewGuid().ToString("N"),
+            SpaceId = spaceId.Value,
+            KnowledgeBaseId = string.IsNullOrWhiteSpace(input?.KnowledgeBaseId)
+                ? null
+                : input!.KnowledgeBaseId!.Trim()
+        }, cancellationToken);
         return Ok(result);
     }
 

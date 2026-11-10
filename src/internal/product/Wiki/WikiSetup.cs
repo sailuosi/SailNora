@@ -7,8 +7,9 @@ public static class WikiSetup
 {
     public static IServiceCollection AddSailNoraWiki(this IServiceCollection services)
     {
-        // Hangfire.Enabled=true 时由 App.HangfireSetup 覆盖为 HangfireWikiIngestEnqueue
+        // Hangfire.Enabled=true 时由 App.HangfireSetup 覆盖为 Hangfire*Enqueue
         services.AddScoped<IWikiIngestEnqueue, InlineWikiIngestEnqueue>();
+        services.AddScoped<IWikiFinalizeEnqueue, InlineWikiFinalizeEnqueue>();
         return services;
     }
 }

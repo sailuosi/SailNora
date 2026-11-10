@@ -30,6 +30,10 @@ public class KnChunk
     [SooColumn("Kc_EmbeddingJson", Length = -1, CanBeNull = true)]
     public string? EmbeddingJson { get; set; }
 
+    /// <summary>当前内容修订号；每次用户编辑或回滚自增。</summary>
+    [SooColumn("Kc_ContentRevision", CanBeNull = false)]
+    public int ContentRevision { get; set; }
+
     [SooColumn("Kc_CreateTime", CanBeNull = false)]
     public DateTime CreateTime { get; set; }
 }

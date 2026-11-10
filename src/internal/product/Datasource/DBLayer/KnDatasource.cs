@@ -17,7 +17,7 @@ public class KnDatasource
     [SooColumn("Kds_Name", Length = 128, CanBeNull = false)]
     public string Name { get; set; } = string.Empty;
 
-    /// <summary>rss | …</summary>
+    /// <summary>rss | gitlab | …</summary>
     [SooColumn("Kds_Type", Length = 32, CanBeNull = false)]
     public string Type { get; set; } = DatasourceTypes.Rss;
 
@@ -47,6 +47,7 @@ public class KnDatasource
 public static class DatasourceTypes
 {
     public const string Rss = "rss";
+    public const string Gitlab = "gitlab";
 }
 
 public static class DatasourceSyncStatuses
