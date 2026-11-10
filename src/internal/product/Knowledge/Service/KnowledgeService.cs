@@ -2,6 +2,7 @@ using System.Security.Cryptography;
 using SailNora.Foundation.Data;
 using SailNora.Foundation.DI;
 using SailNora.Foundation.Storage;
+using SailNora.Product.Ai.Embedding;
 using SailNora.Product.Knowledge.DBLayer;
 using SailNora.Product.Knowledge.Dtos;
 using SailNora.Product.Knowledge.Jobs;
@@ -15,19 +16,22 @@ public sealed class KnowledgeService : IScoped
     private readonly MooRepository<KnChunk> _chunks;
     private readonly ILocalFileStorage _storage;
     private readonly IDocumentProcessEnqueue _enqueue;
+    private readonly ITextEmbedder _embedder;
 
     public KnowledgeService(
         MooRepository<KnKnowledgeBase> bases,
         MooRepository<KnKnowledge> knowledges,
         MooRepository<KnChunk> chunks,
         ILocalFileStorage storage,
-        IDocumentProcessEnqueue enqueue)
+        IDocumentProcessEnqueue enqueue,
+        ITextEmbedder embedder)
     {
         _bases = bases;
         _knowledges = knowledges;
         _chunks = chunks;
         _storage = storage;
         _enqueue = enqueue;
+        _embedder = embedder;
     }
 
     public KnowledgeBaseDto CreateBase(Guid spaceId, CreateKnowledgeBaseInput input)
@@ -53,6 +57,14 @@ public sealed class KnowledgeService : IScoped
             .OrderByDescending(b => b.CreateTime)
             .Select(ToBaseDto)
             .ToList();
+
+    public KnowledgeBaseDto? GetBase(Guid spaceId, string knowledgeBaseId)
+    {
+        var kb = _bases.Repo.GetById(knowledgeBaseId);
+        if (kb is null || kb.SpaceId != spaceId)
+            return null;
+        return ToBaseDto(kb);
+    }
 
     public async Task<KnowledgeDto> UploadFileAsync(
         Guid spaceId,
@@ -113,7 +125,6 @@ public sealed class KnowledgeService : IScoped
             FileType = entity.FileType
         });
 
-        // 同步/异步处理后重新读取状态
         var fresh = _knowledges.Repo.GetById(knowledgeId) ?? entity;
         return ToKnowledgeDto(fresh);
     }
@@ -126,6 +137,18 @@ public sealed class KnowledgeService : IScoped
         return ToKnowledgeDto(entity);
     }
 
+    public List<KnowledgeDto> ListKnowledge(Guid spaceId, string knowledgeBaseId)
+    {
+        var kb = _bases.Repo.GetById(knowledgeBaseId);
+        if (kb is null || kb.SpaceId != spaceId)
+            return [];
+
+        return _knowledges.Repo.GetList(k => k.KnowledgeBaseId == knowledgeBaseId && k.SpaceId == spaceId)
+            .OrderByDescending(k => k.CreateTime)
+            .Select(ToKnowledgeDto)
+            .ToList();
+    }
+
     public List<ChunkDto> ListChunks(Guid spaceId, string knowledgeId)
     {
         var knowledge = _knowledges.Repo.GetById(knowledgeId);
@@ -134,15 +157,52 @@ public sealed class KnowledgeService : IScoped
 
         return _chunks.Repo.GetList(c => c.KnowledgeId == knowledgeId)
             .OrderBy(c => c.ChunkIndex)
-            .Select(c => new ChunkDto
-            {
-                Id = c.Id,
-                KnowledgeId = c.KnowledgeId,
-                Content = c.Content,
-                ChunkIndex = c.ChunkIndex,
-                ChunkType = c.ChunkType
-            })
+            .Select(ToChunkDto)
             .ToList();
+    }
+
+    public ChunkDto? GetChunk(Guid spaceId, string chunkId)
+    {
+        var chunk = _chunks.Repo.GetById(chunkId);
+        if (chunk is null || chunk.SpaceId != spaceId)
+            return null;
+        return ToChunkDto(chunk);
+    }
+
+    public async Task<ChunkDto> UpdateChunkAsync(
+        Guid spaceId,
+        string knowledgeId,
+        string chunkId,
+        UpdateChunkInput input,
+        CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(input.Content))
+            throw new InvalidOperationException("分块内容不能为空");
+
+        var knowledge = _knowledges.Repo.GetById(knowledgeId)
+                        ?? throw new InvalidOperationException("知识不存在");
+        if (knowledge.SpaceId != spaceId)
+            throw new UnauthorizedAccessException("无权访问");
+
+        var chunk = _chunks.Repo.GetById(chunkId)
+                    ?? throw new InvalidOperationException("分块不存在");
+        if (chunk.SpaceId != spaceId || chunk.KnowledgeId != knowledgeId)
+            throw new InvalidOperationException("分块与知识不匹配");
+
+        chunk.Content = input.Content.Trim();
+        var vector = await _embedder.EmbedAsync(chunk.Content, cancellationToken);
+        chunk.EmbeddingJson = EmbeddingCodec.ToJson(vector);
+        _chunks.Repo.Update(chunk);
+        return ToChunkDto(chunk);
+    }
+
+    public void DeleteChunk(Guid spaceId, string knowledgeId, string chunkId)
+    {
+        var chunk = _chunks.Repo.GetById(chunkId)
+                    ?? throw new InvalidOperationException("分块不存在");
+        if (chunk.SpaceId != spaceId || chunk.KnowledgeId != knowledgeId)
+            throw new InvalidOperationException("分块与知识不匹配");
+        _chunks.Repo.Delete(chunk);
     }
 
     private static string SanitizeFileName(string fileName)
@@ -174,5 +234,16 @@ public sealed class KnowledgeService : IScoped
         ParseStatus = e.ParseStatus,
         ErrorMessage = e.ErrorMessage,
         CreateTime = e.CreateTime
+    };
+
+    private static ChunkDto ToChunkDto(KnChunk c) => new()
+    {
+        Id = c.Id,
+        KnowledgeId = c.KnowledgeId,
+        KnowledgeBaseId = c.KnowledgeBaseId,
+        Content = c.Content,
+        ChunkIndex = c.ChunkIndex,
+        ChunkType = c.ChunkType,
+        HasEmbedding = !string.IsNullOrWhiteSpace(c.EmbeddingJson)
     };
 }

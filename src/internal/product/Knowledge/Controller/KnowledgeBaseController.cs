@@ -60,6 +60,16 @@ public sealed class KnowledgeBaseController : ControllerBase
         return Ok(dto);
     }
 
+    [HttpGet("api/v1/knowledge-bases/{id}/knowledge")]
+    [Permission("space:read")]
+    public ActionResult<List<KnowledgeDto>> ListKnowledge(string id)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(_knowledge.ListKnowledge(spaceId.Value, id));
+    }
+
     [HttpGet("api/v1/chunks/{knowledgeId}")]
     [Permission("space:read")]
     public ActionResult<List<ChunkDto>> ListChunks(string knowledgeId)
@@ -68,6 +78,44 @@ public sealed class KnowledgeBaseController : ControllerBase
         if (spaceId is null)
             return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
         return Ok(_knowledge.ListChunks(spaceId.Value, knowledgeId));
+    }
+
+    [HttpGet("api/v1/chunks/by-id/{chunkId}")]
+    [Permission("space:read")]
+    public ActionResult<ChunkDto> GetChunk(string chunkId)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        var dto = _knowledge.GetChunk(spaceId.Value, chunkId);
+        if (dto is null)
+            return NotFound(ApiResult.Fail("分块不存在"));
+        return Ok(dto);
+    }
+
+    [HttpPut("api/v1/chunks/{knowledgeId}/{chunkId}")]
+    [Permission("space:read")]
+    public async Task<ActionResult<ChunkDto>> UpdateChunk(
+        string knowledgeId,
+        string chunkId,
+        [FromBody] UpdateChunkInput input,
+        CancellationToken cancellationToken)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(await _knowledge.UpdateChunkAsync(spaceId.Value, knowledgeId, chunkId, input, cancellationToken));
+    }
+
+    [HttpDelete("api/v1/chunks/{knowledgeId}/{chunkId}")]
+    [Permission("space:read")]
+    public ActionResult DeleteChunk(string knowledgeId, string chunkId)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        _knowledge.DeleteChunk(spaceId.Value, knowledgeId, chunkId);
+        return Ok(new { deleted = true });
     }
 
     [HttpGet("api/v1/knowledge/{knowledgeId}")]

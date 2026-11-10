@@ -24,10 +24,10 @@ public sealed class CapabilitiesController : ControllerBase
         Edition = "standard",
         Backend = "dotnet",
         Agent = true,
-        Wiki = false,
+        Wiki = true,
         Sandbox = false,
-        McpServer = false,
-        Datasource = false,
+        McpServer = true,
+        Datasource = true,
         AuthModes = ["jwt", "api_key"]
     };
 }

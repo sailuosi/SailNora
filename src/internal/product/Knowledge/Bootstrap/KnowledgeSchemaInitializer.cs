@@ -13,7 +13,9 @@ public sealed class KnowledgeSchemaInitializer : IScoped
     [
         typeof(KnKnowledgeBase),
         typeof(KnKnowledge),
-        typeof(KnChunk)
+        typeof(KnChunk),
+        typeof(KnKnowledgeTag),
+        typeof(KnFaqEntry)
     ];
 
     private readonly DBInsCash _cash;

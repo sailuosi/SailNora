@@ -34,9 +34,16 @@ public sealed class ChunkDto
 {
     public string Id { get; set; } = string.Empty;
     public string KnowledgeId { get; set; } = string.Empty;
+    public string KnowledgeBaseId { get; set; } = string.Empty;
     public string Content { get; set; } = string.Empty;
     public int ChunkIndex { get; set; }
     public string ChunkType { get; set; } = "text";
+    public bool HasEmbedding { get; set; }
+}
+
+public sealed class UpdateChunkInput
+{
+    public string Content { get; set; } = string.Empty;
 }
 
 public sealed class DocumentProcessPayload

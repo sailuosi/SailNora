@@ -3,7 +3,9 @@ using Hangfire.Dashboard;
 using mooSQL.data;
 using SailNora.Foundation.Data;
 using SailNora.Foundation.Options;
+using SailNora.Product.Datasource.Jobs;
 using SailNora.Product.Knowledge.Jobs;
+using SailNora.Product.Wiki.Jobs;
 
 namespace SailNora.App.Scheduling;
 
@@ -33,8 +35,10 @@ public static class HangfireSetupExtensions
 
         services.AddHangfireServer();
         services.AddScoped<RefreshTokenCleanupJob>();
-        // 覆盖 KnowledgeSetup 中的 Inline 实现
+        // 覆盖 Knowledge/Wiki Setup 中的 Inline 实现
         services.AddScoped<IDocumentProcessEnqueue, HangfireDocumentProcessEnqueue>();
+        services.AddScoped<IWikiIngestEnqueue, HangfireWikiIngestEnqueue>();
+        services.AddScoped<IDatasourceSyncEnqueue, HangfireDatasourceSyncEnqueue>();
         return services;
     }
 

@@ -9,6 +9,9 @@
     "EmbeddingProvider": "hashing",
     "EmbeddingModel": "text-embedding-3-small",
     "EmbeddingDimensions": 64,
-    "RerankEnabled": true
+    "RerankEnabled": true,
+    "AgentToolMode": "native",
+    "HitlEnabled": true,
+    "HitlTimeoutSeconds": 0
   }
 }

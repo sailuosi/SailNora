@@ -35,6 +35,17 @@ using SailNora.Product.Knowledge;
 using SailNora.Product.Knowledge.Bootstrap;
 using SailNora.Product.Knowledge.Jobs;
 using SailNora.Product.Knowledge.Service;
+using SailNora.Product.Datasource;
+using SailNora.Product.Datasource.Bootstrap;
+using SailNora.Product.Datasource.Jobs;
+using SailNora.Product.Datasource.Service;
+using SailNora.Product.Mcp;
+using SailNora.Product.Mcp.Bootstrap;
+using SailNora.Product.Mcp.Service;
+using SailNora.Product.Wiki;
+using SailNora.Product.Wiki.Bootstrap;
+using SailNora.Product.Wiki.Jobs;
+using SailNora.Product.Wiki.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -46,6 +57,9 @@ builder.Services.AddSailNoraAi(builder.Configuration);
 builder.Services.AddSailNoraKnowledge(builder.Configuration);
 builder.Services.AddSailNoraChat();
 builder.Services.AddSailNoraAgent();
+builder.Services.AddSailNoraWiki();
+builder.Services.AddSailNoraMcp();
+builder.Services.AddSailNoraDatasource();
 builder.Services.AddSailNoraHangfire(builder.Configuration);
 
 builder.Services.AddSailNoraServiceDiscovery(
@@ -67,7 +81,19 @@ builder.Services.AddSailNoraServiceDiscovery(
     typeof(AgentService),
     typeof(AgentChatService),
     typeof(KnowledgeAgentTools),
+    typeof(AgentNativeToolFactory),
     typeof(AgentSchemaInitializer),
+    typeof(TagService),
+    typeof(FaqService),
+    typeof(WikiService),
+    typeof(WikiIngestJob),
+    typeof(WikiSchemaInitializer),
+    typeof(McpServiceRegistry),
+    typeof(HitlService),
+    typeof(McpSchemaInitializer),
+    typeof(DatasourceService),
+    typeof(DatasourceSyncJob),
+    typeof(DatasourceSchemaInitializer),
     typeof(ProductAssemblyMarker));
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -164,6 +190,9 @@ using (var scope = app.Services.CreateScope())
     await scope.ServiceProvider.GetRequiredService<KnowledgeSchemaInitializer>().InitializeAsync();
     await scope.ServiceProvider.GetRequiredService<ChatSchemaInitializer>().InitializeAsync();
     await scope.ServiceProvider.GetRequiredService<AgentSchemaInitializer>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<WikiSchemaInitializer>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<McpSchemaInitializer>().InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<DatasourceSchemaInitializer>().InitializeAsync();
 }
 
 app.UseSwagger();

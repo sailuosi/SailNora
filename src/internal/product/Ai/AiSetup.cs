@@ -46,12 +46,17 @@ public static class AiSetup
         if (string.Equals(options.Provider, AiProviders.OpenAI, StringComparison.OrdinalIgnoreCase)
             && !string.IsNullOrWhiteSpace(options.ApiKey))
         {
-            var chatClient = SailNoraAiClient.CreateOpenAiChatClient(options);
+            IChatClient chatClient = SailNoraAiClient.CreateOpenAiChatClient(options)
+                .AsIChatClient()
+                .AsBuilder()
+                .UseFunctionInvocation()
+                .Build();
             return chatClient.AsAIAgent(instructions: instructions, name: name);
         }
 
         var placeholder = sp.GetRequiredService<PlaceholderChatClient>();
-        return placeholder.AsAIAgent(new ChatClientAgentOptions
+        IChatClient withTools = placeholder.AsBuilder().UseFunctionInvocation().Build();
+        return withTools.AsAIAgent(new ChatClientAgentOptions
         {
             Name = name,
             ChatOptions = new ChatOptions { Instructions = instructions }
