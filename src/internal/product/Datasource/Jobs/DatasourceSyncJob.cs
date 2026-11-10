@@ -13,7 +13,7 @@ using SailNora.Product.Knowledge.Jobs;
 
 namespace SailNora.Product.Datasource.Jobs;
 
-/// <summary>对齐上游 asynq <c>datasource:sync</c>（F6：rss + gitlab）。</summary>
+/// <summary>对齐上游 asynq <c>datasource:sync</c>（F6：rss + gitlab + confluence + feishu）。</summary>
 public sealed class DatasourceSyncJob : IScoped
 {
     private readonly MooRepository<KnDatasource> _sources;
@@ -72,6 +72,8 @@ public sealed class DatasourceSyncJob : IScoped
             {
                 DatasourceTypes.Rss => await SyncRssAsync(ds, cancellationToken),
                 DatasourceTypes.Gitlab => await SyncGitlabAsync(ds, cancellationToken),
+                DatasourceTypes.Confluence => await SyncConfluenceAsync(ds, cancellationToken),
+                DatasourceTypes.Feishu => await SyncFeishuAsync(ds, cancellationToken),
                 _ => throw new InvalidOperationException($"暂不支持数据源类型: {ds.Type}")
             };
 
@@ -145,6 +147,44 @@ public sealed class DatasourceSyncJob : IScoped
             var body = $"# {title}\n\nPath: `{item.Path}`\n\n{content}\n";
             var (ok, wasSkip) = await ImportMarkdownAsync(
                 ds, item.Guid, title, body, knowledgeType: "gitlab", cancellationToken);
+            if (wasSkip) skipped++;
+            else if (ok) imported++;
+        }
+
+        return (imported, skipped);
+    }
+
+    private async Task<(int Imported, int Skipped)> SyncConfluenceAsync(KnDatasource ds, CancellationToken cancellationToken)
+    {
+        var json = await FetchTextAsync(ds.Url, cancellationToken);
+        var items = ConfluencePageParser.Parse(json);
+        var imported = 0;
+        var skipped = 0;
+
+        foreach (var item in items.Take(50))
+        {
+            var body = $"# {item.Title}\n\nSource: confluence:{item.Id}\n\n{item.Body}\n";
+            var (ok, wasSkip) = await ImportMarkdownAsync(
+                ds, item.Id, item.Title, body, knowledgeType: "confluence", cancellationToken);
+            if (wasSkip) skipped++;
+            else if (ok) imported++;
+        }
+
+        return (imported, skipped);
+    }
+
+    private async Task<(int Imported, int Skipped)> SyncFeishuAsync(KnDatasource ds, CancellationToken cancellationToken)
+    {
+        var json = await FetchTextAsync(ds.Url, cancellationToken);
+        var items = FeishuDocParser.Parse(json);
+        var imported = 0;
+        var skipped = 0;
+
+        foreach (var item in items.Take(50))
+        {
+            var body = $"# {item.Title}\n\nSource: feishu:{item.Id}\n\n{item.Body}\n";
+            var (ok, wasSkip) = await ImportMarkdownAsync(
+                ds, item.Id, item.Title, body, knowledgeType: "feishu", cancellationToken);
             if (wasSkip) skipped++;
             else if (ok) imported++;
         }

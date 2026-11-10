@@ -46,7 +46,12 @@ public sealed class McpOutboundDialer : IScoped
         try
         {
             var client = _httpClientFactory.CreateClient("mcp-outbound");
-            var init = await PostJsonRpcAsync(client, uri, 1, "initialize", new
+            var resolved = await ResolveRpcUriAsync(client, transport, uri, bearerToken, cancellationToken);
+            if (!resolved.Ok || resolved.Uri is null)
+                return new McpDialResult { Ok = false, Message = resolved.Error ?? "resolve rpc url failed", Tools = [] };
+
+            var rpcUri = resolved.Uri;
+            var init = await PostJsonRpcAsync(client, rpcUri, 1, "initialize", new
             {
                 protocolVersion = "2024-11-05",
                 capabilities = new { },
@@ -57,16 +62,17 @@ public sealed class McpOutboundDialer : IScoped
                 return init;
 
             // 部分服务端需要 initialized 通知；忽略失败
-            _ = await PostJsonRpcAsync(client, uri, null, "notifications/initialized", new { }, bearerToken, cancellationToken, notification: true);
+            _ = await PostJsonRpcAsync(client, rpcUri, null, "notifications/initialized", new { }, bearerToken, cancellationToken, notification: true);
 
-            var list = await PostJsonRpcAsync(client, uri, 2, "tools/list", new { }, bearerToken, cancellationToken);
+            var list = await PostJsonRpcAsync(client, rpcUri, 2, "tools/list", new { }, bearerToken, cancellationToken);
             if (!list.Ok)
                 return list;
 
+            var via = resolved.ViaSse ? " via sse" : "";
             return new McpDialResult
             {
                 Ok = true,
-                Message = $"dial ok protocol={init.ProtocolVersion ?? "unknown"} tools={list.Tools.Count}",
+                Message = $"dial ok{via} protocol={init.ProtocolVersion ?? "unknown"} tools={list.Tools.Count}",
                 ProtocolVersion = init.ProtocolVersion,
                 ServerName = init.ServerName,
                 Tools = list.Tools
@@ -97,8 +103,13 @@ public sealed class McpOutboundDialer : IScoped
         try
         {
             var client = _httpClientFactory.CreateClient("mcp-outbound");
+            var resolved = await ResolveRpcUriAsync(client, transport, uri, bearerToken, cancellationToken);
+            if (!resolved.Ok || resolved.Uri is null)
+                return FailCall(toolName, resolved.Error ?? "resolve rpc url failed");
+            var rpcUri = resolved.Uri;
+
             // 轻量会话：initialize 后再 call（部分服务端要求）
-            var init = await PostJsonRpcAsync(client, uri, 1, "initialize", new
+            var init = await PostJsonRpcAsync(client, rpcUri, 1, "initialize", new
             {
                 protocolVersion = "2024-11-05",
                 capabilities = new { },
@@ -107,9 +118,9 @@ public sealed class McpOutboundDialer : IScoped
             if (!init.Ok)
                 return FailCall(toolName, init.Message);
 
-            _ = await PostJsonRpcAsync(client, uri, null, "notifications/initialized", new { }, bearerToken, cancellationToken, notification: true);
+            _ = await PostJsonRpcAsync(client, rpcUri, null, "notifications/initialized", new { }, bearerToken, cancellationToken, notification: true);
 
-            var call = await PostJsonRpcRawAsync(client, uri, 3, "tools/call", new
+            var call = await PostJsonRpcRawAsync(client, rpcUri, 3, "tools/call", new
             {
                 name = toolName.Trim(),
                 arguments = arguments ?? new Dictionary<string, object?>()
@@ -162,6 +173,99 @@ public sealed class McpOutboundDialer : IScoped
         Content = [],
         Message = message
     };
+
+    /// <summary>SSE 传输：GET 握手取 endpoint.url；其它 transport 原样 POST。</summary>
+    private static async Task<(bool Ok, Uri? Uri, bool ViaSse, string? Error)> ResolveRpcUriAsync(
+        HttpClient client,
+        string transport,
+        Uri configured,
+        string? bearerToken,
+        CancellationToken cancellationToken)
+    {
+        if (!string.Equals(transport.Trim(), "sse", StringComparison.OrdinalIgnoreCase))
+            return (true, configured, false, null);
+
+        using var req = new HttpRequestMessage(HttpMethod.Get, configured);
+        req.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("text/event-stream"));
+        if (!string.IsNullOrWhiteSpace(bearerToken))
+            req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", bearerToken.Trim());
+
+        using var resp = await client.SendAsync(req, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        if (!resp.IsSuccessStatusCode)
+        {
+            var errBody = await resp.Content.ReadAsStringAsync(cancellationToken);
+            return (false, null, true, $"SSE HTTP {(int)resp.StatusCode}: {Truncate(errBody, 200)}");
+        }
+
+        await using var stream = await resp.Content.ReadAsStreamAsync(cancellationToken);
+        using var reader = new StreamReader(stream);
+        var endpointUrl = await ReadSseEndpointUrlAsync(reader, cancellationToken);
+        if (string.IsNullOrWhiteSpace(endpointUrl))
+            return (false, null, true, "SSE endpoint event missing valid url");
+
+        Uri? rpc = null;
+        if (Uri.TryCreate(endpointUrl, UriKind.Absolute, out var abs)
+            && (abs.Scheme == Uri.UriSchemeHttp || abs.Scheme == Uri.UriSchemeHttps))
+            rpc = abs;
+        else if (Uri.TryCreate(configured, endpointUrl, out var rel)
+                 && (rel.Scheme == Uri.UriSchemeHttp || rel.Scheme == Uri.UriSchemeHttps))
+            rpc = rel;
+
+        if (rpc is null)
+            return (false, null, true, "SSE endpoint event missing valid url");
+
+        return (true, rpc, true, null);
+    }
+
+    internal static async Task<string?> ReadSseEndpointUrlAsync(TextReader reader, CancellationToken cancellationToken)
+    {
+        string? eventName = null;
+        var data = new StringBuilder();
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var line = await reader.ReadLineAsync(cancellationToken);
+            if (line is null)
+                break;
+
+            if (line.Length == 0)
+            {
+                if (string.Equals(eventName, "endpoint", StringComparison.OrdinalIgnoreCase) && data.Length > 0)
+                {
+                    var raw = data.ToString().Trim();
+                    try
+                    {
+                        using var doc = JsonDocument.Parse(raw);
+                        if (doc.RootElement.TryGetProperty("url", out var u))
+                            return u.GetString();
+                    }
+                    catch
+                    {
+                        // data 可能是裸 URL
+                        if (raw.StartsWith("http", StringComparison.OrdinalIgnoreCase))
+                            return raw;
+                    }
+                }
+
+                eventName = null;
+                data.Clear();
+                continue;
+            }
+
+            if (line.StartsWith(':'))
+                continue;
+            if (line.StartsWith("event:", StringComparison.OrdinalIgnoreCase))
+                eventName = line["event:".Length..].Trim();
+            else if (line.StartsWith("data:", StringComparison.OrdinalIgnoreCase))
+            {
+                if (data.Length > 0)
+                    data.Append('\n');
+                data.Append(line["data:".Length..].TrimStart());
+            }
+        }
+
+        return null;
+    }
 
     private static async Task<McpDialResult> PostJsonRpcAsync(
         HttpClient client,

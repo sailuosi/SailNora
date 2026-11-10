@@ -12,6 +12,8 @@
     "RerankEnabled": true,
     "AgentToolMode": "native",
     "HitlEnabled": true,
-    "HitlTimeoutSeconds": 0
+    "HitlTimeoutSeconds": 0,
+    "VectorStore": "json",
+    "MemoryExtractMode": "llm"
   }
 }

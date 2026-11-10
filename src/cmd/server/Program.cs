@@ -125,6 +125,7 @@ builder.Services.AddSailNoraServiceDiscovery(
     typeof(SandboxRuntimeService),
     typeof(HostSandboxRunner),
     typeof(DockerSandboxRunner),
+    typeof(DockerSandboxSessionService),
     typeof(SandboxSchemaInitializer),
     typeof(ProductAssemblyMarker));
 

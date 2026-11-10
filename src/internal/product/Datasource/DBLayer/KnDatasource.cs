@@ -48,6 +48,8 @@ public static class DatasourceTypes
 {
     public const string Rss = "rss";
     public const string Gitlab = "gitlab";
+    public const string Confluence = "confluence";
+    public const string Feishu = "feishu";
 }
 
 public static class DatasourceSyncStatuses

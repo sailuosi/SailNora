@@ -37,6 +37,18 @@ public class AiOptions
 
     /// <summary>HITL 等待秒数；0 表示发出审批事件后立即 auto-approve（便于冒烟）。</summary>
     public int HitlTimeoutSeconds { get; set; }
+
+    /// <summary>json（EmbeddingJson 余弦，默认）| pgvector（未接线时回退 json）</summary>
+    public string VectorStore { get; set; } = "json";
+
+    /// <summary>heuristic（默认）| llm（OpenAI 蒸馏；Placeholder 时走轻量规则蒸馏）</summary>
+    public string MemoryExtractMode { get; set; } = "heuristic";
+}
+
+public static class MemoryExtractModes
+{
+    public const string Heuristic = "heuristic";
+    public const string Llm = "llm";
 }
 
 public static class AgentToolModes

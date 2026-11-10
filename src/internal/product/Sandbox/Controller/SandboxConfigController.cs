@@ -104,4 +104,56 @@ public sealed class SandboxConfigController : ControllerBase
             return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
         return Ok(await _sandboxes.ExecAsync(spaceId.Value, id, input, cancellationToken));
     }
+
+    /// <summary>F5m：Docker 长会话列表。</summary>
+    [HttpGet("{id}/sessions")]
+    [Permission("space:read")]
+    public ActionResult<List<SandboxSessionDto>> ListSessions(string id)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(_sandboxes.ListSessions(spaceId.Value, id));
+    }
+
+    /// <summary>F5m：创建 Docker 长会话（docker run -d）。</summary>
+    [HttpPost("{id}/sessions")]
+    [Permission("space:read")]
+    public async Task<ActionResult<SandboxSessionDto>> CreateSession(
+        string id,
+        [FromBody] CreateSandboxSessionInput? input,
+        CancellationToken cancellationToken)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(await _sandboxes.CreateSessionAsync(spaceId.Value, id, input, cancellationToken));
+    }
+
+    [HttpPost("{id}/sessions/{sessionId}/exec")]
+    [Permission("space:read")]
+    public async Task<ActionResult<SandboxCommandResultDto>> ExecSession(
+        string id,
+        string sessionId,
+        [FromBody] RunSandboxCommandInput input,
+        CancellationToken cancellationToken)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(await _sandboxes.ExecSessionAsync(spaceId.Value, id, sessionId, input, cancellationToken));
+    }
+
+    [HttpDelete("{id}/sessions/{sessionId}")]
+    [Permission("space:read")]
+    public async Task<ActionResult<SandboxSessionDto>> DestroySession(
+        string id,
+        string sessionId,
+        CancellationToken cancellationToken)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(await _sandboxes.DestroySessionAsync(spaceId.Value, id, sessionId, cancellationToken));
+    }
 }

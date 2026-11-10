@@ -5,6 +5,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
 using SailNora.Product.Ai.Embedding;
+using SailNora.Product.Knowledge.Vector;
 
 namespace SailNora.Product.Ai;
 
@@ -16,7 +17,18 @@ public static class AiSetup
         services.AddSingleton<PlaceholderChatClient>();
         services.AddSingleton<AIAgent>(CreateAgent);
         services.AddSingleton<ITextEmbedder>(CreateEmbedder);
+        services.AddScoped<JsonChunkVectorIndex>();
+        services.AddScoped<PgVectorChunkIndex>();
+        services.AddScoped<IChunkVectorIndex>(CreateVectorIndex);
         return services;
+    }
+
+    private static IChunkVectorIndex CreateVectorIndex(IServiceProvider sp)
+    {
+        var opt = sp.GetRequiredService<IOptions<AiOptions>>().Value;
+        if (string.Equals(opt.VectorStore, VectorStoreKinds.Pgvector, StringComparison.OrdinalIgnoreCase))
+            return sp.GetRequiredService<PgVectorChunkIndex>();
+        return sp.GetRequiredService<JsonChunkVectorIndex>();
     }
 
     private static ITextEmbedder CreateEmbedder(IServiceProvider sp)

@@ -14,11 +14,16 @@ public sealed class SandboxConfigService : IScoped
 
     private readonly MooRepository<KnSandboxConfig> _configs;
     private readonly SandboxRuntimeService _runtime;
+    private readonly DockerSandboxSessionService _sessions;
 
-    public SandboxConfigService(MooRepository<KnSandboxConfig> configs, SandboxRuntimeService runtime)
+    public SandboxConfigService(
+        MooRepository<KnSandboxConfig> configs,
+        SandboxRuntimeService runtime,
+        DockerSandboxSessionService sessions)
     {
         _configs = configs;
         _runtime = runtime;
+        _sessions = sessions;
     }
 
     public SandboxConfigDto Create(Guid spaceId, CreateSandboxConfigInput input)
@@ -94,14 +99,62 @@ public sealed class SandboxConfigService : IScoped
 
     public SandboxInventoryDto Inventory(Guid spaceId, string id)
     {
-        _ = RequireOwned(spaceId, id);
+        var c = RequireOwned(spaceId, id);
+        var live = _sessions.ListForConfig(spaceId, id);
         return new SandboxInventoryDto
         {
             ConfigId = id,
-            ActiveCount = 0,
-            Instances = [],
-            Note = "F5d stub: no live sandbox runtime"
+            ActiveCount = live.Count,
+            Instances = live.Select(s => s.ContainerName).ToArray(),
+            Note = live.Count > 0
+                ? $"F5m docker long sessions active={live.Count}"
+                : string.Equals(c.Backend, "docker", StringComparison.OrdinalIgnoreCase)
+                    ? "F5m: no active docker sessions (POST .../sessions to create)"
+                    : "F5d: host/remote has no long-session inventory"
         };
+    }
+
+    public Task<SandboxSessionDto> CreateSessionAsync(
+        Guid spaceId,
+        string id,
+        CreateSandboxSessionInput? input,
+        CancellationToken ct = default)
+    {
+        var c = RequireOwned(spaceId, id);
+        return _sessions.CreateAsync(spaceId, c, input, ct);
+    }
+
+    public Task<SandboxCommandResultDto> ExecSessionAsync(
+        Guid spaceId,
+        string id,
+        string sessionId,
+        RunSandboxCommandInput input,
+        CancellationToken ct = default) =>
+        _sessions.ExecAsync(spaceId, id, sessionId, input, ct);
+
+    public Task<SandboxSessionDto> DestroySessionAsync(
+        Guid spaceId,
+        string id,
+        string sessionId,
+        CancellationToken ct = default) =>
+        _sessions.DestroyAsync(spaceId, id, sessionId, ct);
+
+    public List<SandboxSessionDto> ListSessions(Guid spaceId, string id)
+    {
+        _ = RequireOwned(spaceId, id);
+        return _sessions.ListForConfig(spaceId, id)
+            .Select(s => new SandboxSessionDto
+            {
+                Id = s.Id,
+                ConfigId = s.ConfigId,
+                ContainerId = s.ContainerId,
+                ContainerName = s.ContainerName,
+                Image = s.Image,
+                WorkDir = s.WorkDir,
+                Destroyed = s.Destroyed,
+                CreateTime = s.CreateTime
+            })
+            .ToList();
     }
 
     public Task<SandboxProbeResultDto> ProbeAsync(Guid spaceId, string id, CancellationToken ct = default)

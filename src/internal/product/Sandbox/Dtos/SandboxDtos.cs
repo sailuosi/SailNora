@@ -67,3 +67,20 @@ public sealed class SandboxCommandResultDto
     public string? Error { get; set; }
     public string? WorkDir { get; set; }
 }
+
+public sealed class CreateSandboxSessionInput
+{
+    public string? WorkDir { get; set; }
+}
+
+public sealed class SandboxSessionDto
+{
+    public string Id { get; set; } = string.Empty;
+    public string ConfigId { get; set; } = string.Empty;
+    public string ContainerId { get; set; } = string.Empty;
+    public string ContainerName { get; set; } = string.Empty;
+    public string Image { get; set; } = string.Empty;
+    public string WorkDir { get; set; } = string.Empty;
+    public bool Destroyed { get; set; }
+    public DateTime CreateTime { get; set; }
+}

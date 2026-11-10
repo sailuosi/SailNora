@@ -70,6 +70,54 @@ public sealed class DatasourceController : ControllerBase
         return Content(json, "application/json; charset=utf-8");
     }
 
+    /// <summary>本地冒烟用样例 Confluence pages（无需外网）。</summary>
+    [HttpGet("api/v1/datasources/sample-confluence-pages")]
+    [AllowAnonymous]
+    public ContentResult SampleConfluencePages()
+    {
+        const string json = """
+            {
+              "pages": [
+                {
+                  "id": "cf-refund-1",
+                  "title": "Confluence 退款说明",
+                  "body": "Confluence 样例：购买后 14 天内可退款。"
+                },
+                {
+                  "id": "cf-install-1",
+                  "title": "Confluence 安装指南",
+                  "body": "Confluence 样例：先检查依赖再安装。"
+                }
+              ]
+            }
+            """;
+        return Content(json, "application/json; charset=utf-8");
+    }
+
+    /// <summary>本地冒烟用样例飞书文档（无需外网/租户）。</summary>
+    [HttpGet("api/v1/datasources/sample-feishu-docs")]
+    [AllowAnonymous]
+    public ContentResult SampleFeishuDocs()
+    {
+        const string json = """
+            {
+              "docs": [
+                {
+                  "id": "fs-refund-1",
+                  "title": "飞书 退款说明",
+                  "body": "飞书样例：购买后 14 天内可退款。"
+                },
+                {
+                  "id": "fs-install-1",
+                  "title": "飞书 安装指南",
+                  "body": "飞书样例：先检查依赖再安装。"
+                }
+              ]
+            }
+            """;
+        return Content(json, "application/json; charset=utf-8");
+    }
+
     [HttpPost("api/v1/datasources")]
     [Authorize]
     [Permission("space:read")]

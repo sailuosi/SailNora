@@ -41,8 +41,8 @@ public sealed class DatasourceService : IScoped
             throw new UnauthorizedAccessException("知识库不属于当前空间");
 
         var type = string.IsNullOrWhiteSpace(input.Type) ? DatasourceTypes.Rss : input.Type.Trim().ToLowerInvariant();
-        if (type is not (DatasourceTypes.Rss or DatasourceTypes.Gitlab))
-            throw new InvalidOperationException("F6 支持 type=rss|gitlab");
+        if (type is not (DatasourceTypes.Rss or DatasourceTypes.Gitlab or DatasourceTypes.Confluence or DatasourceTypes.Feishu))
+            throw new InvalidOperationException("F6 支持 type=rss|gitlab|confluence|feishu");
 
         var entity = new KnDatasource
         {

@@ -1,5 +1,7 @@
+using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using SailNora.Product.Agent.Tools;
 using SailNora.Product.Mcp.DBLayer;
@@ -57,6 +59,74 @@ public sealed class McpInboundController : ControllerBase
         };
 
         return Ok(new { jsonrpc = "2.0", id, result });
+    }
+
+    /// <summary>
+    /// F5j/F5l：MCP SSE 握手 — <c>event: endpoint</c> 后按间隔心跳（comment + ping 事件）。
+    /// 查询参数：<c>interval_sec</c>（默认 5）、<c>max_sec</c>（默认 60，0=直到客户端断开，上限 600）。
+    /// </summary>
+    [HttpGet("/mcp/{endpointId}/sse")]
+    public async Task Sse(string endpointId, CancellationToken cancellationToken)
+    {
+        var auth = Request.Headers.Authorization.ToString();
+        if (string.IsNullOrWhiteSpace(auth) || !auth.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            Response.StatusCode = StatusCodes.Status401Unauthorized;
+            Response.ContentType = "application/json";
+            await Response.WriteAsync("""{"error":"missing bearer token"}""", cancellationToken);
+            return;
+        }
+
+        var token = auth["Bearer ".Length..].Trim();
+        var endpoint = _mcp.AuthenticateEndpoint(endpointId, token);
+        if (endpoint is null)
+        {
+            Response.StatusCode = StatusCodes.Status401Unauthorized;
+            Response.ContentType = "application/json";
+            await Response.WriteAsync("""{"error":"invalid token"}""", cancellationToken);
+            return;
+        }
+
+        var intervalSec = 5;
+        if (int.TryParse(Request.Query["interval_sec"], out var iq) && iq > 0)
+            intervalSec = Math.Clamp(iq, 1, 60);
+        var maxSec = 60;
+        if (int.TryParse(Request.Query["max_sec"], out var mq))
+            maxSec = mq <= 0 ? 0 : Math.Clamp(mq, 1, 600);
+
+        Response.Headers.CacheControl = "no-cache";
+        Response.Headers.Connection = "keep-alive";
+        Response.Headers["X-Accel-Buffering"] = "no";
+        Response.ContentType = "text/event-stream; charset=utf-8";
+        HttpContext.Features.Get<Microsoft.AspNetCore.Http.Features.IHttpResponseBodyFeature>()?.DisableBuffering();
+
+        var postUrl = $"{Request.Scheme}://{Request.Host}/mcp/{endpointId}";
+        var payload = JsonSerializer.Serialize(new { url = postUrl });
+        var endpointBytes = Encoding.UTF8.GetBytes($"event: endpoint\ndata: {payload}\n\n");
+        await Response.Body.WriteAsync(endpointBytes, cancellationToken);
+        await Response.Body.FlushAsync(cancellationToken);
+
+        using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        if (maxSec > 0)
+            linked.CancelAfter(TimeSpan.FromSeconds(maxSec));
+
+        var seq = 0;
+        try
+        {
+            while (!linked.Token.IsCancellationRequested)
+            {
+                await Task.Delay(TimeSpan.FromSeconds(intervalSec), linked.Token);
+                seq++;
+                // SSE comment keep-alive + 显式 ping 事件（便于冒烟计数）
+                var ping = Encoding.UTF8.GetBytes($": keepalive {seq}\nevent: ping\ndata: {{\"seq\":{seq}}}\n\n");
+                await Response.Body.WriteAsync(ping, linked.Token);
+                await Response.Body.FlushAsync(linked.Token);
+            }
+        }
+        catch (OperationCanceledException)
+        {
+            // 客户端断开或 max_sec 到期
+        }
     }
 
     private static object BuildInitialize(string endpointName) => new
