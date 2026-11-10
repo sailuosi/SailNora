@@ -57,7 +57,8 @@ Web UI / CLI / IM / Embed / MCP 客户端
 | 项 | 选择 |
 |----|------|
 | 主服务 | ASP.NET Core，多目标 **`net8.0` · `net10.0` · `net11.0`** |
-| 前端 / 解析 | 上游 Vue + Python docreader（手动或脚本同步，暂不 submodule） |
+| 前端 / 解析 | `src/sync/frontend` + `src/sync/docreader`（只读同步） |
+| 源码布局 | 全部在 `src/`；只读进 `src/sync/`（[ADR-0002](./doc/ADR/0002-src目录与上游对齐.md)） |
 | 数据与队列 | PostgreSQL（ParadeDB）优先；Redis 队列语义对齐 asynq；Lite/SQLite 靠后 |
 | 兼容硬指标 | HTTP/SSE/WS · JWT/API Key/Embed/MCP · RBAC · capabilities |
 
@@ -92,22 +93,23 @@ flowchart LR
 
 ---
 
-## 仓库结构（规划）
+## 仓库结构
+
+**所有源码在 `src/`**。无需改造资产在 [`src/sync/`](./src/sync/)（与上游同名）；C# 重写在 `cmd/` / `internal/` 等（见 [`src/README.md`](./src/README.md)）。
 
 ```text
 sail-nora/
-├── README.md                 # 本文件
-├── doc/                      # 纲领、分册、ADR
-├── src/                      # .NET 解决方案（建设中）
-├── frontend/                 # 上游同步（只读契约侧）
-├── docreader/                # 上游同步
-├── migrations/               # 上游 SQL 语义兼容
-├── proto/                    # docreader gRPC 定义
-├── scripts/                  # 上游同步等脚本
-└── deploy/                   # Compose / Helm 覆盖 .NET app
+├── README.md
+├── doc/
+└── src/
+    ├── sync/                 # 只读同步（frontend、docreader、migrations…）
+    ├── cmd/server/           # C# Host（建设中）
+    ├── internal/             # C# 核心
+    ├── cli/ · client/
+    ├── docker/ · deploy/ · helm/
+    ├── scripts/sync-upstream.ps1
+    └── UPSTREAM_VERSION
 ```
-
-当前仓库以文档与骨架筹备为主；实现代码将落在 `src/`。
 
 ---
 
@@ -118,6 +120,8 @@ sail-nora/
 | [全局总任务纲领](./doc/00-全局总任务纲领.md) | 范围、兼容契约、阶段与 WBS |
 | [文档索引](./doc/README.md) | 分册与 ADR 目录 |
 | [ADR-0001](./doc/ADR/0001-tfm与上游同步.md) | TFM 与上游同步方式 |
+| [ADR-0002](./doc/ADR/0002-src目录与上游对齐.md) | `src/` 与上游 1:1 切分 |
+| [src/README.md](./src/README.md) | 同步/重写目录角色表 |
 
 上游工程导读：[WeKnora `docs/architecture.md`](https://github.com/Tencent/WeKnora/blob/main/docs/architecture.md) · [产品文档](https://weknora.weixin.qq.com/docs/)
 
@@ -125,7 +129,7 @@ sail-nora/
 
 ## 状态
 
-**早期筹备**：纲领与决策已落地，解决方案与可运行后端尚未完成。欢迎按阶段 0→1 推进。
+**早期筹备**：纲领与 `src/sync/` 首轮只读资产已落地；.NET Host 尚未实现。
 
 ---
 

@@ -1,0 +1,28 @@
+# Build
+bin/
+obj/
+out/
+*.user
+*.suo
+.vs/
+.idea/
+
+# Node / Python (synced trees)
+**/node_modules/
+**/dist/
+**/.venv/
+**/__pycache__/
+**/.pytest_cache/
+**/.uv/
+**/*.pyc
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+!.env.lite.example
+
+# OS
+Thumbs.db
+Desktop.ini
+.DS_Store

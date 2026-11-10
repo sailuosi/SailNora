@@ -1,0 +1,11 @@
+﻿# Sail Nora 上游对照记录（每次同步后更新）
+# upstream: https://github.com/Tencent/WeKnora
+product_version=0.9.0
+git_tag=
+git_commit=
+synced_at=2026-11-10T12:00:52+08:00
+synced_by=93400
+source_path=C:\sleveen\code\github\ai\WeKnora-main\WeKnora-main
+sync_root=src/sync
+include=frontend,docreader,mcp-server,migrations,config,dataset,examples,testdata,licenses,docs,website-docs,Formula,packages,miniprogram
+notes=first full copy of no-modify assets into src/sync
