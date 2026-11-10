@@ -1,0 +1,9 @@
+{
+  "Jwt": {
+    "Issuer": "sail-nora",
+    "Audience": "sail-nora",
+    "SigningKey": "sail-nora-dev-signing-key-change-in-production-32bytes!!",
+    "AccessTokenMinutes": 120,
+    "RefreshTokenDays": 7
+  }
+}

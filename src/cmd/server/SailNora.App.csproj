@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <RootNamespace>SailNora.App</RootNamespace>
+    <AssemblyName>SailNora.App</AssemblyName>
+  </PropertyGroup>
+
+  <!-- Web SDK 默认单 TFM；覆盖为多目标时仍用 Directory.Build.props -->
+  <PropertyGroup>
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\internal\foundation\SailNora.Foundation.csproj" />
+    <ProjectReference Include="..\..\internal\platform\SailNora.Platform.csproj" />
+    <ProjectReference Include="..\..\internal\product\SailNora.Product.csproj" />
+    <ProjectReference Include="..\..\..\..\hangfire.moo-sql\src\Hangfire.MooSql\Hangfire.MooSql.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Hangfire.AspNetCore" Version="1.8.23" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.22" Condition="'$(TargetFramework)' == 'net8.0'" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="10.0.8" Condition="'$(TargetFramework)' == 'net10.0'" />
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="10.1.7" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Update="Configuration\**\*.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+</Project>

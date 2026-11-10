@@ -1,0 +1,15 @@
+{
+  "DBCoonfig": {
+    "Connections": [
+      {
+        "Position": 0,
+        "Name": "Master",
+        "DbType": "SQLite",
+        "ConnectString": "Data Source=App_Data/sailnora.db",
+        "Version": "3.0",
+        "WatchSQL": true,
+        "MinTimeSpan": 900
+      }
+    ]
+  }
+}

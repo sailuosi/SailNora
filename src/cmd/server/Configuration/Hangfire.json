@@ -1,0 +1,8 @@
+{
+  "Hangfire": {
+    "Enabled": false,
+    "DashboardPath": "/hangfire",
+    "TablesPrefix": "hf_",
+    "RefreshTokenCleanupCron": "0 3 * * *"
+  }
+}

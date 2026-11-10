@@ -1,0 +1,12 @@
+<Project>
+  <PropertyGroup>
+    <!-- ADR-0001: net8/10/11；本机暂无 8+10（未装 net11 SDK 时）。装好后改为 net8.0;net10.0;net11.0 -->
+    <TargetFrameworks>net8.0;net10.0</TargetFrameworks>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
+    <AcceptNPOIOSMFLicense>true</AcceptNPOIOSMFLicense>
+    <SuppressTfmSupportBuildWarnings>true</SuppressTfmSupportBuildWarnings>
+  </PropertyGroup>
+</Project>
