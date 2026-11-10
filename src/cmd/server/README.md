@@ -14,6 +14,8 @@ dotnet run -f net10.0 --urls http://127.0.0.1:5080
 - Capabilities: `GET /api/system/capabilities`（兼 `/api/v1/system/capabilities`）
 - 权限探针: `GET /api/probe/secure`（Bearer / `X-API-Key`；可用 `X-Tenant-ID` 切空间）
 - AI 流式: `POST /api/ai/chat` body `{"prompt":"..."}`（需 Bearer；默认 Placeholder SSE）
+- 知识库: `POST /api/v1/knowledge-bases`；上传 `POST /api/v1/knowledge-bases/{id}/knowledge/file`；分块 `GET /api/v1/chunks/{knowledgeId}`
+- DocReader 探针: `GET /api/v1/system/docreader/info`（默认 Enabled=false）
 
 ## 配置
 

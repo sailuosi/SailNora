@@ -40,6 +40,8 @@ public sealed class WrapApiResultFilter : IResultFilter
         if (context.Result is ObjectResult objectResult)
         {
             objectResult.Value = Wrap(objectResult.Value);
+            // 避免 DeclaredType 仍为业务 DTO 时，序列化器按错误类型 Unbox
+            objectResult.DeclaredType = objectResult.Value?.GetType();
             return;
         }
 

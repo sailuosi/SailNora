@@ -19,10 +19,15 @@ using SailNora.Platform.Auth.Controller;
 using SailNora.Platform.Auth.Service;
 using SailNora.Platform.Bootstrap;
 using SailNora.Platform.Probe.Controller;
+using SailNora.Foundation.Storage;
 using SailNora.Product;
 using SailNora.Product.Ai;
 using SailNora.Product.Ai.Controller;
 using SailNora.Product.Ai.Service;
+using SailNora.Product.Knowledge;
+using SailNora.Product.Knowledge.Bootstrap;
+using SailNora.Product.Knowledge.Jobs;
+using SailNora.Product.Knowledge.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -31,16 +36,21 @@ builder.Services.AddSailNoraProjectOptions(builder.Configuration);
 builder.Services.AddMooSql(builder.Configuration);
 builder.Services.AddSailNoraPlatform();
 builder.Services.AddSailNoraAi(builder.Configuration);
+builder.Services.AddSailNoraKnowledge(builder.Configuration);
 builder.Services.AddSailNoraHangfire(builder.Configuration);
 
 builder.Services.AddSailNoraServiceDiscovery(
     typeof(AuthService),
     typeof(DbInitializer),
     typeof(GlobalExceptionFilter),
+    typeof(LocalFileStorage),
     typeof(PermissionAuthorizationHandler),
     typeof(RefreshTokenCleanupJob),
     typeof(AiChatService),
     typeof(PlaceholderChatClient),
+    typeof(KnowledgeService),
+    typeof(DocumentProcessJob),
+    typeof(KnowledgeSchemaInitializer),
     typeof(ProductAssemblyMarker));
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -134,6 +144,7 @@ using (var scope = app.Services.CreateScope())
 {
     var initializer = scope.ServiceProvider.GetRequiredService<IDbInitializer>();
     await initializer.InitializeAsync();
+    await scope.ServiceProvider.GetRequiredService<KnowledgeSchemaInitializer>().InitializeAsync();
 }
 
 app.UseSwagger();

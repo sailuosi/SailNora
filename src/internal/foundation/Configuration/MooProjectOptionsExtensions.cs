@@ -15,6 +15,8 @@ public static class MooProjectOptionsExtensions
         services.Configure<JwtOptions>(configuration.GetSection(JwtOptions.SectionName));
         services.Configure<RedisOptions>(configuration.GetSection(RedisOptions.SectionName));
         services.Configure<HangfireHostOptions>(configuration.GetSection(HangfireHostOptions.SectionName));
+        services.Configure<StorageOptions>(configuration.GetSection(StorageOptions.SectionName));
+        services.Configure<DocReaderOptions>(configuration.GetSection(DocReaderOptions.SectionName));
         return services;
     }
 }
