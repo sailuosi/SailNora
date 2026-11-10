@@ -9,12 +9,15 @@ dotnet run -f net10.0 --urls http://127.0.0.1:5080
 
 - Swagger: `http://127.0.0.1:5080/swagger`
 - Health: `GET /health`
-- 登录: `POST /api/auth/login` body `{"userName":"admin","password":"admin123"}`
-- 权限探针: `GET /api/probe/secure`（Bearer Token）
+- 登录: `POST /api/auth/login`（或 `/api/v1/auth/login`）body `{"userName":"admin","password":"admin123"}` → JWT 含 `tid`/`srole`
+- 空间: `GET /api/spaces`；创建 API Key: `POST /api/spaces/{id}/api-keys`
+- Capabilities: `GET /api/system/capabilities`（兼 `/api/v1/system/capabilities`）
+- 权限探针: `GET /api/probe/secure`（Bearer / `X-API-Key`；可用 `X-Tenant-ID` 切空间）
+- AI 流式: `POST /api/ai/chat` body `{"prompt":"..."}`（需 Bearer；默认 Placeholder SSE）
 
 ## 配置
 
-`Configuration/` 分片：`Jwt` · `DBCoonfig`（默认 SQLite `App_Data/sailnora.db`）· `Hangfire`（默认 **Enabled=false**，避免当前 SQLite 方言下 Counter 查询告警；接 Postgres/MSSQL 或方言修复后再开）。
+`Configuration/` 分片：`Jwt` · `DBCoonfig`（默认 SQLite `App_Data/sailnora.db`）· `Ai`（默认 Placeholder；`Provider=OpenAI` + `ApiKey` 接真实模型）· `Hangfire`（默认 **Enabled=false**，避免当前 SQLite 方言下 Counter 查询告警；接 Postgres/MSSQL 或方言修复后再开）。
 
 ## 依赖仓
 

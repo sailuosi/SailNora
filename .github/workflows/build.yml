@@ -1,0 +1,53 @@
+name: build
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        tfm: [net8.0, net10.0]
+    steps:
+      - name: Checkout sail-nora
+        uses: actions/checkout@v4
+        with:
+          path: sail-nora
+
+      - name: Checkout mooSQL
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.MOOSQL_REPO || 'sleveen/moo-sqlm' }}
+          path: moo-sqlm
+          token: ${{ secrets.GH_PAT || github.token }}
+        continue-on-error: true
+
+      - name: Checkout Hangfire.MooSql
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ vars.HANGFIRE_MOOSQL_REPO || 'sleveen/hangfire.moo-sql' }}
+          path: hangfire.moo-sql
+          token: ${{ secrets.GH_PAT || github.token }}
+        continue-on-error: true
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            10.0.x
+
+      - name: Verify sibling deps
+        shell: bash
+        run: |
+          test -f moo-sqlm/mooSQL2024/ext/mooSQL.Ext.csproj
+          test -f hangfire.moo-sql/src/Hangfire.MooSql/Hangfire.MooSql.csproj
+
+      - name: Build
+        working-directory: sail-nora/src
+        run: dotnet build SailNora.sln -c Release -f ${{ matrix.tfm }} --verbosity minimal

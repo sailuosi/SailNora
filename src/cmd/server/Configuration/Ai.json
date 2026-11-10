@@ -1,0 +1,10 @@
+{
+  "Ai": {
+    "Provider": "Placeholder",
+    "Model": "gpt-4o-mini",
+    "ApiKey": "",
+    "Endpoint": "",
+    "AgentName": "sail-nora助手",
+    "Instructions": "你是 sail-nora 知识助手，请用简洁、准确的中文回答。"
+  }
+}

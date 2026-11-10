@@ -5,6 +5,7 @@ using SailNora.Foundation.Data;
 using SailNora.Foundation.DI;
 using SailNora.Foundation.Security;
 using SailNora.Platform.Auth.DBLayer;
+using SailNora.Platform.Space.DBLayer;
 using SailNora.Platform.User.DBLayer;
 
 namespace SailNora.Platform.Bootstrap;
@@ -14,10 +15,14 @@ public sealed class DbInitializer : IDbInitializer, IScoped
     private static readonly Type[] EntityTypes =
     [
         typeof(SysUser),
-        typeof(SysRefreshToken)
+        typeof(SysRefreshToken),
+        typeof(SysSpace),
+        typeof(SysSpaceMember),
+        typeof(SysApiKey)
     ];
 
-    private static readonly Guid SuperAdminUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    public static readonly Guid SuperAdminUserId = Guid.Parse("00000000-0000-0000-0000-000000000001");
+    public static readonly Guid DefaultSpaceId = Guid.Parse("00000000-0000-0000-0000-000000000010");
 
     private readonly DBInsCash _cash;
 
@@ -31,6 +36,7 @@ public sealed class DbInitializer : IDbInitializer, IScoped
 
         db.useDDL().doInitTable(new DMLOption(), EntityTypes);
         SeedIfEmpty(db);
+        EnsureDefaultSpace(db);
         return Task.CompletedTask;
     }
 
@@ -53,5 +59,42 @@ public sealed class DbInitializer : IDbInitializer, IScoped
         var work = db.useWork();
         work.Insert(admin);
         work.Commit();
+    }
+
+    private static void EnsureDefaultSpace(DBInstance db)
+    {
+        var spaceRepo = db.useRepo<SysSpace>();
+        var memberRepo = db.useRepo<SysSpaceMember>();
+        var now = DateTime.Now;
+
+        if (spaceRepo.GetById(DefaultSpaceId) is null)
+        {
+            var work = db.useWork();
+            work.Insert(new SysSpace
+            {
+                Id = DefaultSpaceId,
+                Name = "默认空间",
+                Slug = "default",
+                Status = SpaceStatus.Enabled,
+                CreateTime = now
+            });
+            work.Commit();
+        }
+
+        var adminMember = memberRepo.GetFirst(m =>
+            m.SpaceId == DefaultSpaceId && m.UserId == SuperAdminUserId);
+        if (adminMember is null && db.useRepo<SysUser>().GetById(SuperAdminUserId) is not null)
+        {
+            var work = db.useWork();
+            work.Insert(new SysSpaceMember
+            {
+                Id = Guid.NewGuid(),
+                SpaceId = DefaultSpaceId,
+                UserId = SuperAdminUserId,
+                Role = SpaceRoles.Owner,
+                CreateTime = now
+            });
+            work.Commit();
+        }
     }
 }

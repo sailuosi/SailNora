@@ -17,5 +17,12 @@ public sealed class ProbeController : ControllerBase
     [HttpGet("secure")]
     [Authorize]
     [Permission("skeleton:probe")]
-    public object Secure() => new { ok = true, account = CurrentUser.GetAccount(User) };
+    public object Secure() => new
+    {
+        ok = true,
+        account = CurrentUser.GetAccount(User),
+        spaceId = CurrentUser.GetTenantId(User)?.ToString(),
+        spaceRole = CurrentUser.GetSpaceRole(User)
+    };
 }
+

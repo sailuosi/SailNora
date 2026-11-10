@@ -1,3 +1,4 @@
+using System.Security.Claims;
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
@@ -19,6 +20,9 @@ using SailNora.Platform.Auth.Service;
 using SailNora.Platform.Bootstrap;
 using SailNora.Platform.Probe.Controller;
 using SailNora.Product;
+using SailNora.Product.Ai;
+using SailNora.Product.Ai.Controller;
+using SailNora.Product.Ai.Service;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -26,6 +30,7 @@ builder.Configuration.AddMooJsonShards(builder.Environment);
 builder.Services.AddSailNoraProjectOptions(builder.Configuration);
 builder.Services.AddMooSql(builder.Configuration);
 builder.Services.AddSailNoraPlatform();
+builder.Services.AddSailNoraAi(builder.Configuration);
 builder.Services.AddSailNoraHangfire(builder.Configuration);
 
 builder.Services.AddSailNoraServiceDiscovery(
@@ -34,6 +39,8 @@ builder.Services.AddSailNoraServiceDiscovery(
     typeof(GlobalExceptionFilter),
     typeof(PermissionAuthorizationHandler),
     typeof(RefreshTokenCleanupJob),
+    typeof(AiChatService),
+    typeof(PlaceholderChatClient),
     typeof(ProductAssemblyMarker));
 
 var jwt = builder.Configuration.GetSection(JwtOptions.SectionName).Get<JwtOptions>()
@@ -45,6 +52,8 @@ builder.Services.AddSingleton<IAuthorizationHandler, PermissionAuthorizationHand
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
     {
+        // 保留自定义短名 Claims（tid / srole / perm / uid），避免默认 Inbound 映射把 tid 改成长 URI
+        options.MapInboundClaims = false;
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuer = true,
@@ -54,6 +63,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             ValidIssuer = jwt.Issuer,
             ValidAudience = jwt.Audience,
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwt.SigningKey)),
+            NameClaimType = ClaimTypes.Name,
             RoleClaimType = "role"
         };
         options.Events = new JwtBearerEvents
@@ -91,7 +101,8 @@ builder.Services.AddControllers(options =>
         options.Filters.Add<GlobalExceptionFilter>();
     })
     .AddApplicationPart(typeof(AuthController).Assembly)
-    .AddApplicationPart(typeof(ProbeController).Assembly);
+    .AddApplicationPart(typeof(ProbeController).Assembly)
+    .AddApplicationPart(typeof(AiChatController).Assembly);
 
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
@@ -129,6 +140,7 @@ app.UseSwagger();
 app.UseSwaggerUI();
 app.UseCors("DevCors");
 app.UseAuthentication();
+app.UseMiddleware<SpaceContextMiddleware>();
 app.UseAuthorization();
 
 app.MapGet("/health", () => Results.Json(new { status = "ok" }));

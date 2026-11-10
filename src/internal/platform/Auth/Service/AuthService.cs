@@ -8,8 +8,10 @@ using SailNora.Foundation.Data;
 using SailNora.Foundation.DI;
 using SailNora.Foundation.Options;
 using SailNora.Foundation.Security;
+using SailNora.Foundation.Tenant;
 using SailNora.Platform.Auth.DBLayer;
 using SailNora.Platform.Auth.Dtos;
+using SailNora.Platform.Space.Service;
 using SailNora.Platform.User.DBLayer;
 
 namespace SailNora.Platform.Auth.Service;
@@ -18,15 +20,18 @@ public sealed class AuthService : IScoped
 {
     private readonly MooRepository<SysUser> _users;
     private readonly MooRepository<SysRefreshToken> _refreshTokens;
+    private readonly SpaceService _spaces;
     private readonly JwtOptions _jwt;
 
     public AuthService(
         MooRepository<SysUser> users,
         MooRepository<SysRefreshToken> refreshTokens,
+        SpaceService spaces,
         IOptions<JwtOptions> jwt)
     {
         _users = users;
         _refreshTokens = refreshTokens;
+        _spaces = spaces;
         _jwt = jwt.Value;
     }
 
@@ -68,17 +73,23 @@ public sealed class AuthService : IScoped
         if (user is null)
             return Task.FromResult<UserInfoResult?>(null);
 
+        var spaces = _spaces.ListForUser(userId);
         return Task.FromResult<UserInfoResult?>(new UserInfoResult
         {
             UserId = user.Id.ToString(),
             Account = user.Account,
             UserName = user.RealName ?? user.Account,
-            Permissions = ["skeleton:probe"]
+            Permissions = ["skeleton:probe", "space:read"],
+            Spaces = spaces,
+            DefaultSpaceId = spaces.FirstOrDefault()?.Id
         });
     }
 
     private LoginResult CreateTokens(SysUser user)
     {
+        var spaces = _spaces.ListForUser(user.Id);
+        var primary = spaces.FirstOrDefault();
+
         var now = DateTime.UtcNow;
         var expires = now.AddMinutes(_jwt.AccessTokenMinutes);
         var claims = new List<Claim>
@@ -87,8 +98,15 @@ public sealed class AuthService : IScoped
             new(ClaimTypes.Name, user.Account),
             new(JwtRegisteredClaimNames.Sub, user.Account),
             new(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString("N")),
-            new(PermissionClaimTypes.Permission, "skeleton:probe")
+            new(PermissionClaimTypes.Permission, "skeleton:probe"),
+            new(PermissionClaimTypes.Permission, "space:read")
         };
+
+        if (primary is not null)
+        {
+            claims.Add(new Claim(SpaceClaimTypes.SpaceId, primary.Id));
+            claims.Add(new Claim(SpaceClaimTypes.SpaceRole, primary.Role));
+        }
 
         var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwt.SigningKey));
         var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
@@ -117,7 +135,9 @@ public sealed class AuthService : IScoped
         {
             AccessToken = access,
             RefreshToken = refreshRaw,
-            ExpiresIn = _jwt.AccessTokenMinutes * 60
+            ExpiresIn = _jwt.AccessTokenMinutes * 60,
+            SpaceId = primary?.Id,
+            SpaceRole = primary?.Role
         };
     }
 }

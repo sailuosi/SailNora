@@ -1,0 +1,15 @@
+sail-nora
+Copyright (c) 2026 sail-nora contributors
+
+This product includes software developed for a .NET port of Tencent WeKnora
+(https://github.com/Tencent/WeKnora), which is licensed under the MIT License.
+
+Upstream / related components (see their respective LICENSE files):
+- WeKnora (MIT) — frontend, docreader, migrations and docs mirrored under src/sync/
+- Microsoft ASP.NET Core / .NET runtime components (MIT)
+- Hangfire (LGPL-3.0 / commercial dual license as applicable to Hangfire packages used)
+- Third-party NuGet packages declared in project files
+
+Sibling project references used at build time (not redistributed by default):
+- mooSQL / mooSQL.Ext
+- Hangfire.MooSql

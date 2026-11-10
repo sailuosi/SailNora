@@ -1,4 +1,4 @@
 namespace SailNora.Product;
 
-/// <summary>产品域占位；对标功能在实施②填充。</summary>
+/// <summary>产品程序集锚点（Scrutor / ApplicationPart）。</summary>
 public static class ProductAssemblyMarker;
