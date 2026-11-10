@@ -127,6 +127,7 @@ sail-nora/
 | [ADR-0002](./doc/ADR/0002-src目录与上游对齐.md) | `src/` 与上游 1:1 切分 |
 | [ADR-0003](./doc/ADR/0003-dotnet选型与sleveen-admin对齐.md) | mooSQL / MAF / Hangfire / JWT |
 | [.net选型](./doc/.net选型/00-选型总览.md) | .NET 选型总览 |
+| [实施计划](./doc/实施/README.md) | 骨架复刻 → 对标功能 |
 | [src/README.md](./src/README.md) | 同步/重写目录角色表 |
 
 上游工程导读：[WeKnora `docs/architecture.md`](https://github.com/Tencent/WeKnora/blob/main/docs/architecture.md) · [产品文档](https://weknora.weixin.qq.com/docs/)
