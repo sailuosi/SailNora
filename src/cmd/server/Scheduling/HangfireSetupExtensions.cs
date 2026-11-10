@@ -3,6 +3,7 @@ using Hangfire.Dashboard;
 using mooSQL.data;
 using SailNora.Foundation.Data;
 using SailNora.Foundation.Options;
+using SailNora.Product.Knowledge.Jobs;
 
 namespace SailNora.App.Scheduling;
 
@@ -32,6 +33,8 @@ public static class HangfireSetupExtensions
 
         services.AddHangfireServer();
         services.AddScoped<RefreshTokenCleanupJob>();
+        // 覆盖 KnowledgeSetup 中的 Inline 实现
+        services.AddScoped<IDocumentProcessEnqueue, HangfireDocumentProcessEnqueue>();
         return services;
     }
 

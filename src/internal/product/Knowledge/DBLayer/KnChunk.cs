@@ -26,6 +26,10 @@ public class KnChunk
     [SooColumn("Kc_ChunkType", Length = 32, CanBeNull = false)]
     public string ChunkType { get; set; } = "text";
 
+    /// <summary>JSON float[]；无 pgvector 时先落库供应用层余弦检索。</summary>
+    [SooColumn("Kc_EmbeddingJson", Length = -1, CanBeNull = true)]
+    public string? EmbeddingJson { get; set; }
+
     [SooColumn("Kc_CreateTime", CanBeNull = false)]
     public DateTime CreateTime { get; set; }
 }

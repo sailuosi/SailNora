@@ -2,6 +2,7 @@ using SailNora.Foundation.Data;
 using SailNora.Foundation.DI;
 using SailNora.Foundation.Options;
 using SailNora.Foundation.Storage;
+using SailNora.Product.Ai.Embedding;
 using SailNora.Product.Knowledge.DBLayer;
 using SailNora.Product.Knowledge.Dtos;
 using SailNora.Product.Knowledge.DocReader;
@@ -18,6 +19,7 @@ public sealed class DocumentProcessJob : IScoped
     private readonly ILocalFileStorage _storage;
     private readonly IDocReaderClient _docReader;
     private readonly DocReaderOptions _docReaderOptions;
+    private readonly ITextEmbedder _embeddings;
     private readonly ILogger<DocumentProcessJob> _logger;
 
     public DocumentProcessJob(
@@ -26,6 +28,7 @@ public sealed class DocumentProcessJob : IScoped
         ILocalFileStorage storage,
         IDocReaderClient docReader,
         IOptions<DocReaderOptions> docReaderOptions,
+        ITextEmbedder embeddings,
         ILogger<DocumentProcessJob> logger)
     {
         _knowledges = knowledges;
@@ -33,6 +36,7 @@ public sealed class DocumentProcessJob : IScoped
         _storage = storage;
         _docReader = docReader;
         _docReaderOptions = docReaderOptions.Value;
+        _embeddings = embeddings;
         _logger = logger;
     }
 
@@ -61,6 +65,7 @@ public sealed class DocumentProcessJob : IScoped
                 _chunks.Repo.Delete(old);
 
             var now = DateTime.Now;
+            var vectors = await _embeddings.EmbedBatchAsync(pieces, cancellationToken);
             for (var i = 0; i < pieces.Count; i++)
             {
                 _chunks.Repo.Insert(new KnChunk
@@ -72,6 +77,7 @@ public sealed class DocumentProcessJob : IScoped
                     Content = pieces[i],
                     ChunkIndex = i,
                     ChunkType = "text",
+                    EmbeddingJson = EmbeddingCodec.ToJson(vectors[i]),
                     CreateTime = now
                 });
             }

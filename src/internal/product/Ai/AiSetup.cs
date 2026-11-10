@@ -4,6 +4,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using OpenAI.Chat;
+using SailNora.Product.Ai.Embedding;
 
 namespace SailNora.Product.Ai;
 
@@ -14,7 +15,24 @@ public static class AiSetup
         services.Configure<AiOptions>(configuration.GetSection(AiOptions.SectionName));
         services.AddSingleton<PlaceholderChatClient>();
         services.AddSingleton<AIAgent>(CreateAgent);
+        services.AddSingleton<ITextEmbedder>(CreateEmbedder);
         return services;
+    }
+
+    private static ITextEmbedder CreateEmbedder(IServiceProvider sp)
+    {
+        var opt = sp.GetRequiredService<IOptions<AiOptions>>().Value;
+        var useOpenAi = string.Equals(opt.EmbeddingProvider, "openai", StringComparison.OrdinalIgnoreCase)
+                        || (string.Equals(opt.Provider, AiProviders.OpenAI, StringComparison.OrdinalIgnoreCase)
+                            && string.Equals(opt.EmbeddingProvider, "auto", StringComparison.OrdinalIgnoreCase));
+
+        if (useOpenAi && !string.IsNullOrWhiteSpace(opt.ApiKey))
+        {
+            var logger = sp.GetRequiredService<Microsoft.Extensions.Logging.ILogger<OpenAiTextEmbedder>>();
+            return new OpenAiTextEmbedder(opt, logger);
+        }
+
+        return new HashingEmbeddingGenerator(opt.EmbeddingDimensions);
     }
 
     private static AIAgent CreateAgent(IServiceProvider sp)

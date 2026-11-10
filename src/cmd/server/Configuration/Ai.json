@@ -5,6 +5,10 @@
     "ApiKey": "",
     "Endpoint": "",
     "AgentName": "sail-nora助手",
-    "Instructions": "你是 sail-nora 知识助手，请用简洁、准确的中文回答。"
+    "Instructions": "你是 sail-nora 知识助手，请用简洁、准确的中文回答。",
+    "EmbeddingProvider": "hashing",
+    "EmbeddingModel": "text-embedding-3-small",
+    "EmbeddingDimensions": 64,
+    "RerankEnabled": true
   }
 }
