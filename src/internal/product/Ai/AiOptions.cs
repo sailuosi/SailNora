@@ -24,8 +24,18 @@ public class AiOptions
 
     public int EmbeddingDimensions { get; set; } = 64;
 
-    /// <summary>是否启用检索后重排（lexical）。</summary>
+    /// <summary>是否启用检索后重排。</summary>
     public bool RerankEnabled { get; set; } = true;
+
+    /// <summary>lexical（默认）| http（外部 Rerank API；失败回退 lexical）</summary>
+    public string RerankProvider { get; set; } = "lexical";
+
+    /// <summary>外部 Rerank HTTP 端点（Cohere 兼容 POST）。</summary>
+    public string? RerankEndpoint { get; set; }
+
+    public string? RerankApiKey { get; set; }
+
+    public string RerankModel { get; set; } = "rerank-multilingual-v3.0";
 
     /// <summary>
     /// Agent 工具模式：native（MAF/MEAI function-calling）| orchestrated（固定编排 tool 事件）。

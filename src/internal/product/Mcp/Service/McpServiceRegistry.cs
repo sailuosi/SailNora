@@ -12,15 +12,18 @@ public sealed class McpServiceRegistry : IScoped
     private readonly MooRepository<KnMcpService> _services;
     private readonly MooRepository<KnMcpEndpoint> _endpoints;
     private readonly McpOutboundDialer _dialer;
+    private readonly McpToolsCache _toolsCache;
 
     public McpServiceRegistry(
         MooRepository<KnMcpService> services,
         MooRepository<KnMcpEndpoint> endpoints,
-        McpOutboundDialer dialer)
+        McpOutboundDialer dialer,
+        McpToolsCache toolsCache)
     {
         _services = services;
         _endpoints = endpoints;
         _dialer = dialer;
+        _toolsCache = toolsCache;
     }
 
     public McpServiceDto CreateService(Guid spaceId, CreateMcpServiceInput input)
@@ -66,24 +69,45 @@ public sealed class McpServiceRegistry : IScoped
                 ?? throw new InvalidOperationException("MCP 服务不存在");
         if (s.SpaceId != spaceId)
             throw new UnauthorizedAccessException("无权访问");
+        _toolsCache.Invalidate(id);
         _services.Repo.Delete(s);
     }
 
-    public async Task<List<McpToolInfoDto>> ListServiceToolsAsync(
-        Guid spaceId, string id, CancellationToken cancellationToken = default)
+    public async Task<McpToolsListResultDto> ListServiceToolsAsync(
+        Guid spaceId,
+        string id,
+        bool refresh = false,
+        CancellationToken cancellationToken = default)
     {
         var entity = RequireServiceEntity(spaceId, id);
+        var ttlSec = (int)_toolsCache.Ttl.TotalSeconds;
+
         if (!McpOutboundDialer.IsHttpTransport(entity.Transport))
         {
-            return
-            [
-                new McpToolInfoDto
+            var stub =
+                new List<McpToolInfoDto>
                 {
-                    Name = "echo",
-                    Description = $"Stub tool for transport '{entity.Transport}' (no dial)",
-                    RequireApproval = entity.RequireApproval
-                }
-            ];
+                    new()
+                    {
+                        Name = "echo",
+                        Description = $"Stub tool for transport '{entity.Transport}' (no dial)",
+                        RequireApproval = entity.RequireApproval
+                    }
+                };
+            return new McpToolsListResultDto { Tools = stub, Cached = false, TtlSeconds = ttlSec };
+        }
+
+        if (!refresh && _toolsCache.TryGet(id, out var cached, out var cachedAt))
+        {
+            foreach (var t in cached)
+                t.RequireApproval = entity.RequireApproval;
+            return new McpToolsListResultDto
+            {
+                Tools = cached.ToList(),
+                Cached = true,
+                CachedAt = cachedAt.ToLocalTime(),
+                TtlSeconds = ttlSec
+            };
         }
 
         var dial = await _dialer.ProbeAsync(entity.Transport, entity.Url, entity.AuthToken, cancellationToken);
@@ -92,7 +116,21 @@ public sealed class McpServiceRegistry : IScoped
 
         foreach (var t in dial.Tools)
             t.RequireApproval = entity.RequireApproval;
-        return dial.Tools;
+        _toolsCache.Set(id, dial.Tools);
+        return new McpToolsListResultDto
+        {
+            Tools = dial.Tools,
+            Cached = false,
+            CachedAt = DateTime.Now,
+            TtlSeconds = ttlSec
+        };
+    }
+
+    public object InvalidateToolsCache(Guid spaceId, string id)
+    {
+        _ = RequireServiceEntity(spaceId, id);
+        var removed = _toolsCache.Invalidate(id);
+        return new { service_id = id, invalidated = removed };
     }
 
     public async Task<object> TestServiceAsync(
@@ -100,6 +138,13 @@ public sealed class McpServiceRegistry : IScoped
     {
         var entity = RequireServiceEntity(spaceId, id);
         var dial = await _dialer.ProbeAsync(entity.Transport, entity.Url, entity.AuthToken, cancellationToken);
+        if (dial.Ok)
+        {
+            foreach (var t in dial.Tools)
+                t.RequireApproval = entity.RequireApproval;
+            _toolsCache.Set(id, dial.Tools);
+        }
+
         return new
         {
             ok = dial.Ok,
@@ -108,7 +153,8 @@ public sealed class McpServiceRegistry : IScoped
             protocol_version = dial.ProtocolVersion,
             server_name = dial.ServerName,
             tools = dial.Tools.Select(t => t.Name).ToList(),
-            message = dial.Message
+            message = dial.Message,
+            tools_cached = dial.Ok
         };
     }
 

@@ -109,6 +109,7 @@ builder.Services.AddSailNoraServiceDiscovery(
     typeof(WikiSchemaInitializer),
     typeof(McpServiceRegistry),
     typeof(McpOutboundDialer),
+    typeof(McpToolsCache),
     typeof(HitlService),
     typeof(McpSchemaInitializer),
     typeof(DatasourceService),

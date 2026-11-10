@@ -52,12 +52,27 @@ public sealed class McpServiceController : ControllerBase
 
     [HttpGet("api/v1/mcp-services/{id}/tools")]
     [Permission("space:read")]
-    public async Task<ActionResult<List<McpToolInfoDto>>> Tools(string id, CancellationToken cancellationToken)
+    public async Task<ActionResult<McpToolsListResultDto>> Tools(
+        string id,
+        [FromQuery] bool refresh = false,
+        CancellationToken cancellationToken = default)
     {
         var spaceId = CurrentUser.GetTenantId(User);
         if (spaceId is null)
             return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
-        return Ok(await _mcp.ListServiceToolsAsync(spaceId.Value, id, cancellationToken));
+        var result = await _mcp.ListServiceToolsAsync(spaceId.Value, id, refresh, cancellationToken);
+        Response.Headers["X-Mcp-Tools-Cache"] = result.Cached ? "hit" : "miss";
+        return Ok(result);
+    }
+
+    [HttpPost("api/v1/mcp-services/{id}/tools/invalidate")]
+    [Permission("space:read")]
+    public ActionResult<object> InvalidateTools(string id)
+    {
+        var spaceId = CurrentUser.GetTenantId(User);
+        if (spaceId is null)
+            return Unauthorized(ApiResult.Fail("缺少空间上下文", ApiResultCodes.Unauthorized));
+        return Ok(_mcp.InvalidateToolsCache(spaceId.Value, id));
     }
 
     [HttpPost("api/v1/mcp-services/{id}/test")]

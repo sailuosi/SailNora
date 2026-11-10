@@ -1,0 +1,6 @@
+{
+  "Ai": {
+    "RerankProvider": "http",
+    "RerankEndpoint": "http://127.0.0.1:5080/api/v1/rerank/sample"
+  }
+}
