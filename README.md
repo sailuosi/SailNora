@@ -54,15 +54,19 @@ Web UI / CLI / IM / Embed / MCP 客户端
 
 ## 技术选型（当前）
 
+整体后端范式对齐已建项目 **[sleveen-admin](../sleveen-admin)**。细则见 [`doc/.net选型/00-选型总览.md`](./doc/.net选型/00-选型总览.md)。
+
 | 项 | 选择 |
 |----|------|
 | 主服务 | ASP.NET Core，多目标 **`net8.0` · `net10.0` · `net11.0`** |
+| ORM | **mooSQL.Ext**（表结构优先 `src/sync/migrations`） |
+| AI 基建 | **MAF（Microsoft.Agents.AI）** |
+| 定时 / 后台任务 | **Hangfire + Hangfire.MooSql** |
+| 权限 / JWT / 接口 | **与 sleveen-admin 一致**（JwtBearer、Permission、ApiResult） |
 | 前端 / 解析 | `src/sync/frontend` + `src/sync/docreader`（只读同步） |
 | 源码布局 | 全部在 `src/`；只读进 `src/sync/`（[ADR-0002](./doc/ADR/0002-src目录与上游对齐.md)） |
-| 数据与队列 | PostgreSQL（ParadeDB）优先；Redis 队列语义对齐 asynq；Lite/SQLite 靠后 |
-| 兼容硬指标 | HTTP/SSE/WS · JWT/API Key/Embed/MCP · RBAC · capabilities |
 
-决策记录见 [`doc/ADR/0001-tfm与上游同步.md`](./doc/ADR/0001-tfm与上游同步.md)。
+决策：[ADR-0001](./doc/ADR/0001-tfm与上游同步.md) · [ADR-0002](./doc/ADR/0002-src目录与上游对齐.md) · [ADR-0003](./doc/ADR/0003-dotnet选型与sleveen-admin对齐.md)。
 
 ---
 
@@ -121,6 +125,8 @@ sail-nora/
 | [文档索引](./doc/README.md) | 分册与 ADR 目录 |
 | [ADR-0001](./doc/ADR/0001-tfm与上游同步.md) | TFM 与上游同步方式 |
 | [ADR-0002](./doc/ADR/0002-src目录与上游对齐.md) | `src/` 与上游 1:1 切分 |
+| [ADR-0003](./doc/ADR/0003-dotnet选型与sleveen-admin对齐.md) | mooSQL / MAF / Hangfire / JWT |
+| [.net选型](./doc/.net选型/00-选型总览.md) | .NET 选型总览 |
 | [src/README.md](./src/README.md) | 同步/重写目录角色表 |
 
 上游工程导读：[WeKnora `docs/architecture.md`](https://github.com/Tencent/WeKnora/blob/main/docs/architecture.md) · [产品文档](https://weknora.weixin.qq.com/docs/)

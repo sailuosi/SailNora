@@ -6,21 +6,24 @@
 
 | 文档 | 说明 | 状态 |
 |------|------|------|
-| [00-全局总任务纲领.md](./00-全局总任务纲领.md) | 总目标、范围边界、兼容契约、阶段路线图 | 生效 v0.4 |
+| [00-全局总任务纲领.md](./00-全局总任务纲领.md) | 总目标、范围边界、兼容契约、阶段路线图 | 生效 v0.5 |
+| [.net选型/00-选型总览.md](./.net选型/00-选型总览.md) | .NET 栈与 sleveen-admin 对齐 | 生效 |
 | 01-架构设计.md | .NET 分层与核心时序 | 待写 |
-| 02-API契约与兼容性.md | 对外契约与测试方法 | 待写 |
+| 02-API契约与兼容性.md | 平台层 vs 产品层契约 | 待写 |
 | 03-模块移植映射.md | Go → C# 映射表 | 待写 |
 | 04-数据与迁移.md | Schema / 队列 / 存储 | 待写 |
 | 05-开发与部署.md | 本地开发与 Compose | 待写 |
 | 06-里程碑与验收.md | 阶段门禁与差异表 | 待写 |
 | [ADR/0001-tfm与上游同步.md](./ADR/0001-tfm与上游同步.md) | TFM 多目标与上游同步方式 | 已接受 |
 | [ADR/0002-src目录与上游对齐.md](./ADR/0002-src目录与上游对齐.md) | `src/` 与上游 1:1 切分 | 已接受 |
+| [ADR/0003-dotnet选型与sleveen-admin对齐.md](./ADR/0003-dotnet选型与sleveen-admin对齐.md) | mooSQL / MAF / Hangfire / JWT | 已接受 |
 
 ## 已确认工程决策
 
 - **TFM**：`net8.0` · `net10.0` · `net11.0`（多目标 + CI 矩阵）
 - **上游资产同步**：手动或脚本；暂不 git submodule
 - **源码布局**：全部在 `src/`；无需改造资产在 [`src/sync/`](../src/sync/)
+- **后端栈**：对齐 **sleveen-admin** — mooSQL · Hangfire · MAF · JWT/`ApiResult`/`Permission`
 
 ## 上游对照
 
